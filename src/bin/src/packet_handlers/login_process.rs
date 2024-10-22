@@ -2,7 +2,7 @@ use ferrumc_core::identity::player_identity::PlayerIdentity;
 use ferrumc_ecs::components::storage::ComponentRefMut;
 use ferrumc_net::connection::{ConnectionState, StreamWriter};
 use ferrumc_net::errors::NetError;
-use ferrumc::events::{event_handler, Event, PlayerStartLoginEvent, PlayerJoinGameEvent RwEvent, EventsError};
+use ferrumc::events::{event_handler, Event, PlayerStartLoginEvent, PlayerJoinGameEvent, RwEvent, EventsError};
 use ferrumc_net::errors::NetError;
 use ferrumc_net::connection::{ConnectionState, StreamWriter, GameProfile, Profile};
 use ferrumc_net::packets::incoming::ack_finish_configuration::AckFinishConfigurationEvent;
@@ -161,11 +161,11 @@ async fn handle_ack_finish_configuration(
         writer.send_packet(&info_update, &NetEncodeOpts::WithLength).await?;
     }
 
-    send_keep_alive(conn_id, state, &mut writer).await?;
-
     PlayerJoinGameEvent::trigger(PlayerJoinGameEvent {
         entity: ack_finish_configuration_event.conn_id
     }, Arc::clone(&state)).await?;
+
+    send_keep_alive(conn_id, state, &mut writer).await?;
 
     Ok(ack_finish_configuration_event)
 }

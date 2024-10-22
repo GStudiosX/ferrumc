@@ -68,5 +68,5 @@ pub struct PlayerStartLoginEvent {
 
 #[derive(Event, Clone)]
 pub struct PlayerJoinGameEvent {
-    entity: Entity,
+    pub entity: Entity,
 }
