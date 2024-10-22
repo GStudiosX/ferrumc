@@ -59,7 +59,6 @@ pub(crate) fn is_field_type_optional(field: &syn::Field) -> bool {
         .any(|segment| segment.ident.to_string().to_lowercase() == "option")
 }
 
-
 pub struct StructInfo<'a> {
     pub struct_name: &'a syn::Ident,
     pub impl_generics: syn::ImplGenerics<'a>,

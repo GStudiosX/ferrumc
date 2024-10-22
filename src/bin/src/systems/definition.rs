@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use crate::systems::keep_alive_system::KeepAliveSystem;
 use crate::systems::tcp_listener_system::TcpListenerSystem;
 use crate::systems::ticking_system::TickingSystem;
+use crate::systems::scheduler_system::SchedulerSystem;
 
 #[async_trait]
 pub trait System: Send + Sync {

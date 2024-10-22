@@ -9,4 +9,6 @@ pub enum EventsError {
     },
     #[error("A listener failed")]
     ListenerFailed,
+    #[error("{0}")]
+    Other(String),
 }

@@ -4,10 +4,10 @@ use crate::decode::{NetDecode, NetDecodeOpts, NetDecodeResult};
 use crate::encode::{NetEncode, NetEncodeOpts, NetEncodeResult};
 use crate::net_types::var_int::VarInt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LengthPrefixedVec<T>
 {
-    pub length: VarInt,
+    //pub length: VarInt,
     pub data: Vec<T>,
 }
 
@@ -15,9 +15,17 @@ impl<T> LengthPrefixedVec<T>
 {
     pub fn new(data: Vec<T>) -> Self {
         Self {
-            length: VarInt::new(data.len() as i32),
+            //length: VarInt::new(data.len() as i32),
             data,
         }
+    }
+
+    pub fn push(&mut self, value: T) {
+        self.data.push(value);
+    }
+
+    pub fn pop(&mut self) -> Option<T> {
+        self.data.pop()
     }
 }
 
@@ -26,7 +34,7 @@ where
     T: NetEncode,
 {
     fn encode<W: Write>(&self, writer: &mut W, opts: &NetEncodeOpts) -> NetEncodeResult<()> {
-        self.length.encode(writer, opts)?;
+        VarInt::new(self.data.len() as i32).encode(writer, opts)?;
 
         for item in &self.data {
             item.encode(writer, opts)?;
@@ -36,7 +44,7 @@ where
     }
 
     async fn encode_async<W: AsyncWrite + Unpin>(&self, writer: &mut W, opts: &NetEncodeOpts) -> NetEncodeResult<()> {
-        self.length.encode_async(writer, opts).await?;
+        VarInt::new(self.data.len() as i32).encode_async(writer, opts).await?;
 
         for item in &self.data {
             item.encode_async(writer, opts).await?;
@@ -58,7 +66,7 @@ where
         }
 
         Ok(Self {
-            length,
+            //length,
             data,
         })
     }

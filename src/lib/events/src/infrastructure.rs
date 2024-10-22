@@ -2,6 +2,7 @@ use std::{any::Any, future::Future, pin::Pin, sync::LazyLock};
 
 use dashmap::DashMap;
 use futures::{stream, StreamExt};
+use tracing::error;
 
 /// A Lazily initialized HashMap wrapped in a ShardedLock optimized for reads.
 type LazyRwListenerMap<K, V> = LazyLock<DashMap<K, V>>;
@@ -74,9 +75,14 @@ pub trait Event: Sized + Send + Sync + 'static {
     ///
     /// Returns `Ok(())` if the execution succeeded. `Err(EventsError)` ifa listener failed.
     async fn trigger(event: Self::Data, state: Self::State) -> Result<(), Self::Error> {
-        let listeners = EVENTS_LISTENERS
-            .get(Self::name())
-            .expect("Failed to find event listeners. Impossible;");
+        let listeners = match EVENTS_LISTENERS.get(Self::name()) {
+            Some(listeners) => listeners,
+            None => {
+                //error!("Failed to find event listeners for '{}'", Self::name());
+                return Ok(());
+            }
+        };
+        //.expect("Failed to find event listeners. Impossible;");
 
 
         // Convert listeners iterator into Stream

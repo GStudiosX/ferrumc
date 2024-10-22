@@ -1,5 +1,6 @@
 // Security or something like that
 #![forbid(unsafe_code)]
+#![feature(async_closure)]
 
 #![feature(slice_as_chunks)]
 
@@ -9,12 +10,29 @@ use std::sync::{Arc};
 use tracing::{error, info};
 use ferrumc_net::server::create_server_listener;
 use systems::definition;
+use ferrumc::get_scheduler;
 
 pub(crate) mod errors;
 mod packet_handlers;
 mod systems;
 
 pub type Result<T> = std::result::Result<T, errors::BinaryError>;
+
+/*
+use ferrumc::events::{event_handler, PlayerStartLoginEvent, GlobalState, NetError, RwEvent};
+
+#[event_handler]
+async fn handle_login_start(
+    event: RwEvent<PlayerStartLoginEvent>,
+    state: GlobalState,
+) -> std::result::Result<RwEvent<PlayerStartLoginEvent>, NetError> {
+    {
+        let profile = &mut event.write().unwrap().profile;
+        profile.username = profile.username.clone() + "1";
+    }
+    Ok(event)
+}
+*/
 
 #[tokio::main]
 async fn main() {
