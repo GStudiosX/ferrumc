@@ -1,6 +1,5 @@
 use ferrumc_macros::{NetEncode, packet};
 use ferrumc_net_codec::net_types::length_prefixed_vec::LengthPrefixedVec;
-use ferrumc_net_codec::encode::NetEncode;
 use crate::connection::{GameProfile, ProfileProperty};
 use bitmask_enum::bitmask;
 use std::io::Write;

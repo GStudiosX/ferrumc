@@ -41,6 +41,9 @@ pub enum NetError {
 
     #[error("{0}")]
     Packet(#[from] PacketError),
+
+    #[error("{0}")]
+    Kick(String),
 }
 
 #[derive(Debug, Error)]

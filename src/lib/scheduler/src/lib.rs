@@ -11,7 +11,7 @@ use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use tokio::sync::Notify;
 use tokio::time::{sleep_until, Duration, Instant};
-use tracing::{error, trace};
+use tracing::error;
 
 pub trait AsyncCallback = 'static
     + Send

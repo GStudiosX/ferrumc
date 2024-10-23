@@ -1,6 +1,8 @@
 use ferrumc_macros::{packet, NetEncode};
-use ferrumc_net_codec::encode::NetEncode;
-use ferrumc_net_codec::net_types::var_int::VarInt;
+use ferrumc_net_codec::{
+    encode::NetEncode,
+    net_types::var_int::VarInt
+};
 use std::io::Write;
 use tokio::io::AsyncWriteExt;
 
@@ -22,6 +24,16 @@ where
     pub data: T,
 }
 
+#[derive(NetEncode, Clone)]
+#[packet(packet_id = 0x04)]
+pub struct LoginPluginMessagePacket<T>
+where
+    T: NetEncode,
+{
+    pub message_id: VarInt,
+    pub channel: String,
+    pub data: T,
+}
 
 impl<T> ConfigurationPluginMessagePacket<T>
 where
@@ -37,10 +49,25 @@ where
 
 impl<T> PlayPluginMessagePacket<T>
 where
-    T: NetEncode {
-    pub fn new_play(channel: String, data: T) -> Self
+    T: NetEncode,
+{
+    pub fn new(channel: String, data: T) -> Self
     {
         Self {
+            channel,
+            data
+        }
+    }
+}
+
+impl<T> LoginPluginMessagePacket<T>
+where
+    T: NetEncode,
+{
+    pub fn new(id: u32, channel: String, data: T) -> Self
+    {
+        Self {
+            message_id: VarInt::new(id as i32),
             channel,
             data
         }

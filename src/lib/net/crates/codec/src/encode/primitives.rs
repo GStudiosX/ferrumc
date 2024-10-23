@@ -44,6 +44,15 @@ impl_for_primitives!(
     f64
 );
 
+impl NetEncode for () {
+    fn encode<W: Write>(&self, writer: &mut W, _: &NetEncodeOpts) -> NetEncodeResult<()> {
+        Ok(())
+    }
+
+    async fn encode_async<W: AsyncWrite + Unpin>(&self, writer: &mut W, opts: &NetEncodeOpts) -> NetEncodeResult<()> {
+        Ok(())
+    }
+}
 
 impl NetEncode for bool {
     fn encode<W: Write>(&self, writer: &mut W, _: &NetEncodeOpts) -> NetEncodeResult<()> {
@@ -179,7 +188,6 @@ impl<T: NetEncode> NetEncode for Option<T> {
         }
     }
 }
-
 
 impl<K, V> NetEncode for HashMap<K, V>
 where

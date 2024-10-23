@@ -27,3 +27,5 @@ serde_derive = { workspace = true }
 rand = { workspace = true }
 uuid = { workspace = true }
 bitmask-enum = { workspace = true }
+dashmap = { workspace = true }
+anyhow = { workspace = true }

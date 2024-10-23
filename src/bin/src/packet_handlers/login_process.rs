@@ -1,10 +1,9 @@
-use ferrumc_core::identity::player_identity::PlayerIdentity;
 use ferrumc_ecs::components::storage::ComponentRefMut;
 use ferrumc_net::connection::{ConnectionState, StreamWriter};
+use ferrumc::events::{event_handler, Event, PlayerStartLoginEvent, PlayerJoinGameEvent, RwEvent};
 use ferrumc_net::errors::NetError;
-use ferrumc::events::{event_handler, Event, PlayerStartLoginEvent, PlayerJoinGameEvent, RwEvent, EventsError};
-use ferrumc_net::errors::NetError;
-use ferrumc_net::connection::{ConnectionState, StreamWriter, GameProfile, Profile};
+use ferrumc_net::GlobalState;
+use ferrumc::{ConnectionState, StreamWriter, GameProfile, Profile};
 use ferrumc_net::packets::incoming::ack_finish_configuration::AckFinishConfigurationEvent;
 use ferrumc_net::packets::incoming::login_acknowledged::LoginAcknowledgedEvent;
 use ferrumc_net::packets::incoming::login_start::LoginStartEvent;
@@ -22,6 +21,10 @@ use ferrumc_net_codec::encode::NetEncodeOpts;
 use ferrumc_net::packets::outgoing::finish_configuration::FinishConfigurationPacket;
 use tracing::{debug, trace, info};
 use ferrumc_net::packets::outgoing::client_bound_plugin_message::{ConfigurationPluginMessagePacket, PlayPluginMessagePacket};
+use ferrumc_net::packets::outgoing::registry_data::{RegistryDataPacket};
+use ferrumc_net::packets::outgoing::set_default_spawn_position::SetDefaultSpawnPositionPacket;
+use ferrumc_net::packets::outgoing::synchronize_player_position::SynchronizePlayerPositionPacket;
+use ferrumc_net::packets::outgoing::client_bound_plugin_message::ConfigurationPluginMessagePacket;
 use ferrumc_net::packets::outgoing::player_info_update::{PlayerInfoUpdatePacket, PlayerActions, PlayerInfo, PlayerAction};
 use ferrumc_net_codec::encode::{NetEncodeOpts};
 use std::sync::Arc;
@@ -47,31 +50,33 @@ async fn handle_login_start(
         .universe
         .get_mut::<Profile>(login_start_event.conn_id)?;
 
+    info!("Handling login start event");
+
+    let uuid = login_start_event.login_start_packet.uuid;
+    let username = login_start_event.login_start_packet.username.clone();
+    info!("Received login start from user with username {}", username);
+
     //Send a Login Success Response to further the login sequence
     let event = RwEvent::new(PlayerStartLoginEvent {
+        entity: login_start_event.conn_id,
         profile: GameProfile::new(uuid, username),
     });
-    RwEvent::<PlayerStartLoginEvent>::trigger(event.clone(), Arc::clone(&state)).await?;
+    
+    match RwEvent::<PlayerStartLoginEvent>::trigger(event.clone(), Arc::clone(&state)).await {
+        Err(NetError::Kick(msg)) => Err(NetError::Kick(msg)),
+        Err(_) => Ok(login_start_event),
+        _ => {
+            if let Some(event) = event.into_inner() {
+                ferrumc::internal::send_login_success(
+                    login_start_event.conn_id,
+                    event.profile,
+                    Arc::clone(&state)
+                ).await?;
+            }
 
-    let event = if let Some(event) = event.into_inner() {
-        event
-    } else {
-        return Err(NetError::EventsError(EventsError::Other(format!("failed to get game profile"))));
-    };
-
-    let game_profile = event.profile;
-    let response = LoginSuccessPacket::new(game_profile.clone());
-    writer.send_packet(&response, &NetEncodeOpts::WithLength).await?;
-
-    // Add the player identity component to the ECS for the entity.
-    state.universe.add_component::<PlayerIdentity>(
-        login_start_event.conn_id,
-        PlayerIdentity::new(game_profile.username.clone(), game_profile.uuid),
-    )?;
-
-    profile.profile = Some(game_profile);
-
-    Ok(login_start_event)
+            Ok(login_start_event)
+        }
+    }
 }
 
 #[event_handler]

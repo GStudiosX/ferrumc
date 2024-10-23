@@ -2,7 +2,7 @@ use std::{any::Any, future::Future, pin::Pin, sync::LazyLock};
 
 use dashmap::DashMap;
 use futures::{stream, StreamExt};
-use tracing::error;
+//use tracing::error;
 
 /// A Lazily initialized HashMap wrapped in a ShardedLock optimized for reads.
 type LazyRwListenerMap<K, V> = LazyLock<DashMap<K, V>>;
@@ -83,7 +83,6 @@ pub trait Event: Sized + Send + Sync + 'static {
             }
         };
         //.expect("Failed to find event listeners. Impossible;");
-
 
         // Convert listeners iterator into Stream
         stream::iter(listeners.iter())

@@ -36,6 +36,12 @@ impl_for_primitives!(
     f32 | f64
 );
 
+impl NetDecode for () {
+    fn decode<R: Read>(reader: &mut R, _: &NetDecodeOpts) -> NetDecodeResult<Self> {
+        Ok(())
+    }
+}
+
 impl NetDecode for bool {
     fn decode<R: Read>(reader: &mut R, _: &NetDecodeOpts) -> NetDecodeResult<Self> {
         Ok(<u8 as NetDecode>::decode(reader, &NetDecodeOpts::None)? != 0)
@@ -80,8 +86,6 @@ where
         Ok(vec)
     }
 }
-
-
 
 /// This isn't actually a type in the Minecraft Protocol. This is just for saving data/ or for general use.
 /// It was created for saving/reading chunks!

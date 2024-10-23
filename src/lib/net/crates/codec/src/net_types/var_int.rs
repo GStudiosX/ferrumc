@@ -6,7 +6,7 @@ use std::io::{Read, Write};
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use crate::net_types::NetTypesError;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VarInt {
     /// The value of the VarInt.
     pub val: i32,

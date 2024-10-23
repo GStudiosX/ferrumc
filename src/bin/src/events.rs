@@ -1,5 +1,3 @@
-/// Event API
-
 pub use ferrumc_net::errors::NetError;
 pub use ferrumc_net::GlobalState;
 
@@ -12,6 +10,8 @@ pub use ferrumc_events::{
 };
 
 pub use ferrumc_net::connection::ClientDisconnectEvent;
+
+pub use ferrumc_net::packets::incoming::server_bound_plugin_message::LoginPluginResponseEvent;
 
 use std::sync::{Arc, RwLock};
 
@@ -63,6 +63,7 @@ where
 
 #[derive(Event, Clone)]
 pub struct PlayerStartLoginEvent {
+    pub entity: Entity,
     pub profile: ferrumc_net::connection::GameProfile,
 }
 

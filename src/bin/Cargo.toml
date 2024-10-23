@@ -7,8 +7,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-experimental = []
-
 rocksdb = ["ferrumc-storage/rocksdb"]
 sled = ["ferrumc-storage/sled"]
 surrealkv = ["ferrumc-storage/surrealkv"]
@@ -36,6 +34,7 @@ ferrumc-world = { workspace = true }
 ferrumc-macros = { workspace = true }
 ferrumc-nbt = { workspace = true }
 ferrumc-scheduler = { workspace = true }
+ferrumc-config = { workspace = true }
 
 ctor = { workspace = true }
 parking_lot = { workspace = true }
@@ -47,6 +46,8 @@ serde_json = { workspace = true }
 async-trait = "0.1.83"
 
 rand = { workspace = true }
+hmac = "0.12.1"
+sha2 = "0.10.8"
 
 [[bin]]
 name = "ferrumc"

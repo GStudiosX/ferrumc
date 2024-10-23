@@ -1,18 +1,22 @@
 use std::sync::Arc;
+use tokio::io::BufReader;
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::TcpStream;
 use tracing::{debug, debug_span, trace, warn, Instrument};
 use ferrumc_net_codec::{
     encode::{NetEncode, NetEncodeOpts},
+    decode::{NetDecode, NetDecodeOpts, NetDecodeResult}, 
     net_types::length_prefixed_vec::LengthPrefixedVec
 };
 use crate::{handle_packet, NetResult, ServerState};
 use crate::packets::incoming::packet_skeleton::PacketSkeleton;
-use ferrumc_macros::{Event, NetEncode};
+use ferrumc_macros::{Event, NetEncode, NetDecode};
 use ferrumc_events::infrastructure::Event;
 use ferrumc_ecs::entities::Entity;
 use std::io::Write;
+use std::io::Read;
 use tokio::io::AsyncWriteExt;
+use crate::errors::NetError;
 
 #[derive(Clone)]
 pub enum ConnectionState {
@@ -35,7 +39,7 @@ impl ConnectionState {
     }
 }
 
-#[derive(Debug, Clone, NetEncode)]
+#[derive(Debug, Clone, NetEncode, NetDecode)]
 pub struct GameProfile {
     pub uuid: u128,
     pub username: String,
@@ -50,18 +54,35 @@ pub struct ProfileProperty {
     pub signature: Option<String>,
 }
 
+impl NetDecode for ProfileProperty {
+    fn decode<R: Read>(reader: &mut R, opts: &NetDecodeOpts) -> NetDecodeResult<Self> {
+        let name = String::decode(reader, opts)?;
+        let value = String::decode(reader, opts)?;
+        let is_signed = bool::decode(reader, opts)?;
+        let signature = if is_signed {
+            Some(String::decode(reader, opts)?)
+        } else {
+            None
+        };
+
+        Ok(ProfileProperty {
+            name, value, is_signed, signature
+        })
+    }
+}
+
 impl GameProfile {
     pub fn new(uuid: u128, username: String) -> Self {
         Self {
             uuid: uuid,
             username,
             properties: LengthPrefixedVec::new(vec![
-                ProfileProperty {
+                /*ProfileProperty {
                     name: String::from("textures"),
                     value: String::from("ewogICJ0aW1lc3RhbXAiIDogMTcyOTQ4NTMzNzM4MiwKICAicHJvZmlsZUlkIiA6ICJhNTNjMjllZjRjZjE0OWYxYWU5MjBiN2NjMmQ2ZDJhYSIsCiAgInByb2ZpbGVOYW1lIiA6ICJHU3R1ZGlvc1giLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTU2YzllNzQzMWE2YzYxZGIyZWJlOWI4YzQ0MWUxMzU5Y2QyMmNlZTQ1ODcwNmM1MDczMmNiM2U1MTM0NWRiNyIKICAgIH0sCiAgICAiQ0FQRSIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYWZkNTUzYjM5MzU4YTI0ZWRmZTNiOGE5YTkzOWZhNWZhNGZhYTRkOWE5YzNkNmFmOGVhZmIzNzdmYTA1YzJiYiIKICAgIH0KICB9Cn0="),
                     is_signed: false,
                     signature: None,
-                }
+                }*/
             ])
         }
     }
@@ -167,21 +188,30 @@ pub async fn handle_connection(state: Arc<ServerState>, tcp_stream: TcpStream) -
         }
 
         let conn_state = state.universe.get::<ConnectionState>(entity)?.clone();
-        if let Err(e) = handle_packet(
+
+        match handle_packet(
             packet_skele.id,
             entity,
             &conn_state,
             &mut packet_skele.data,
-            Arc::clone(&state),
+            Arc::clone(&state)
         )
             .await
             .instrument(debug_span!("eid", %entity))
             .inner()
         {
-            warn!("Failed to handle packet: {:?}. packet_id: {:02X}; conn_state: {}", e, packet_skele.id, conn_state.as_str());
-            // Kick the player (when implemented).
-            break 'recv;
-        };
+            Ok(_) => {},
+            Err(NetError::Kick(msg)) => {
+                warn!("Failed to handle packet: {:?}. packet_id: {:02X}; conn_state: {}", e, packet_skele.id, conn_state.as_str());
+                // Kick the player (when implemented).
+                break 'recv;
+            },
+            Err(e) => {
+                warn!("Failed to handle packet: {:?}. packet_id: {:02X}; conn_state: {}", e, packet_skele.id, conn_state.as_str());
+                // Kick the player (when implemented).
+                break 'recv;
+	    }
+        }
     }
 
     debug!("Connection closed for entity: {:?}", entity);
