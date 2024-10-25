@@ -9,7 +9,7 @@ use ferrumc_net::ServerState;
 use tracing::{error, info};
 use ferrumc_net::server::create_server_listener;
 use systems::definition;
-use std::sync::{atomic::AtomicBool, Arc};
+use std::sync::Arc;
 use tracing::{error, info, trace};
 use ferrumc::get_scheduler;
 use std::io::Cursor;
@@ -45,7 +45,7 @@ async fn handle_login_start(
         let mut writer = ev.entity
             .get_mut::<StreamWriter>(Arc::clone(&state))?;
         writer.send_packet(&ferrumc_net::packets::outgoing::client_bound_plugin_message::LoginPluginMessagePacket::<()>::new(id, String::from("velocity:player_info"), ()), &NetEncodeOpts::WithLength).await?;
-        state.universe.add_component(ev.entity, VelocityMessageId(id));
+        state.universe.add_component(ev.entity, VelocityMessageId(id))?;
 
         // this stops the packet hqndler from doing login success
         Err(NetError::EventsError(EventsError::Other(format!("cancel login success"))))
@@ -61,7 +61,7 @@ async fn handle_velocity_response(
 ) -> NetResult<LoginPluginResponseEvent> {
     let message = &event.packet;
     if message.message_id.val as u32 == event.entity.get::<VelocityMessageId>(Arc::clone(&state))?.0 {
-        state.universe.remove_component::<VelocityMessageId>(event.entity);
+        state.universe.remove_component::<VelocityMessageId>(event.entity)?;
 
         let len = message.data.len();
 

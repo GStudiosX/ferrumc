@@ -1,8 +1,6 @@
 use ferrumc_ecs::components::storage::ComponentRefMut;
-use ferrumc_net::connection::{ConnectionState, StreamWriter};
 use ferrumc::events::{event_handler, Event, PlayerStartLoginEvent, PlayerJoinGameEvent, RwEvent};
 use ferrumc_net::errors::NetError;
-use ferrumc_net::GlobalState;
 use ferrumc::{ConnectionState, StreamWriter, GameProfile, Profile};
 use ferrumc_net::packets::incoming::ack_finish_configuration::AckFinishConfigurationEvent;
 use ferrumc_net::packets::incoming::login_acknowledged::LoginAcknowledgedEvent;
@@ -14,19 +12,14 @@ use ferrumc_net::packets::outgoing::keep_alive::{KeepAlive, KeepAlivePacket};
 use ferrumc_net::packets::outgoing::login_play::LoginPlayPacket;
 use ferrumc_net::packets::outgoing::login_success::LoginSuccessPacket;
 use ferrumc_net::packets::outgoing::registry_data::{get_registry_packets};
-use ferrumc_net::packets::outgoing::set_default_spawn_position::SetDefaultSpawnPositionPacket;
-use ferrumc_net::packets::outgoing::synchronize_player_position::SynchronizePlayerPositionPacket;
 use ferrumc_net::GlobalState;
 use ferrumc_net_codec::encode::NetEncodeOpts;
 use ferrumc_net::packets::outgoing::finish_configuration::FinishConfigurationPacket;
 use tracing::{debug, trace, info};
-use ferrumc_net::packets::outgoing::client_bound_plugin_message::{ConfigurationPluginMessagePacket, PlayPluginMessagePacket};
-use ferrumc_net::packets::outgoing::registry_data::{RegistryDataPacket};
+use ferrumc_net::packets::outgoing::client_bound_plugin_message::ConfigurationPluginMessagePacket;
 use ferrumc_net::packets::outgoing::set_default_spawn_position::SetDefaultSpawnPositionPacket;
 use ferrumc_net::packets::outgoing::synchronize_player_position::SynchronizePlayerPositionPacket;
-use ferrumc_net::packets::outgoing::client_bound_plugin_message::ConfigurationPluginMessagePacket;
 use ferrumc_net::packets::outgoing::player_info_update::{PlayerInfoUpdatePacket, PlayerActions, PlayerInfo, PlayerAction};
-use ferrumc_net_codec::encode::{NetEncodeOpts};
 use std::sync::Arc;
 
 #[event_handler]
@@ -45,10 +38,6 @@ async fn handle_login_start(
     let mut writer = state
         .universe
         .get_mut::<StreamWriter>(login_start_event.conn_id)?;
-
-    let mut profile = state
-        .universe
-        .get_mut::<Profile>(login_start_event.conn_id)?;
 
     info!("Handling login start event");
 

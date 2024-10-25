@@ -3,7 +3,6 @@
 
 use std::sync::Arc;
 use ferrumc_scheduler::Scheduler;
-use lazy_static::lazy_static;
 
 pub use ferrumc_net_codec::encode::{NetEncodeOpts, NetEncode};
 pub use ferrumc_net_codec::decode::{NetDecodeOpts, NetDecode};
@@ -14,6 +13,8 @@ pub use ferrumc_net::NetResult;
 pub use ferrumc_core::identity::player_identity::PlayerIdentity;
 
 pub use ferrumc_net_codec::*;
+
+use lazy_static::lazy_static;
 
 /// Event API
 pub mod events;
@@ -47,16 +48,16 @@ pub mod internal {
     }
 }
 
-/*lazy_static! {
+lazy_static! {
     static ref SCHEDULER: Arc<Scheduler> = Arc::new(Scheduler::new());
 }
 
 pub fn get_scheduler() -> Arc<Scheduler> {
     SCHEDULER.clone()
-}*/
-
-use std::sync::OnceLock;
-pub fn get_scheduler() -> &'static Scheduler {
-    static SCHEDULER: OnceLock<Arc<Scheduler>> = OnceLock::new();
-    SCHEDULER.get_or_init(|| Arc::new(Scheduler::new())).clone()
 }
+
+/*use std::sync::OnceLock;
+pub fn get_scheduler() -> &'static Scheduler {
+    static SCHEDULER: OnceLock<Scheduler> = OnceLock::new();
+    SCHEDULER.get_or_init(|| Scheduler::new())
+}*/

@@ -2,6 +2,7 @@ use crate::components::{ComponentManager};
 use crate::components::storage::{Component, ComponentRef, ComponentRefMut};
 use crate::entities::Entity;
 use crate::ECSResult;
+use std::any::type_name;
 
 #[allow(async_fn_in_trait)]
 pub trait QueryItem {

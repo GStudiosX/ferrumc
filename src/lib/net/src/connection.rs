@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use tokio::io::BufReader;
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::TcpStream;
 use tracing::{debug, debug_span, trace, warn, Instrument};
@@ -164,16 +163,12 @@ pub async fn handle_connection(state: Arc<ServerState>, tcp_stream: TcpStream) -
     let entity = state
         .universe
         .builder()
-        .with(StreamReader::new(reader))?
+        //.with(StreamReader::new(reader))?
         .with(StreamWriter::new(writer))?
         .with(ConnectionState::Handshaking)?
         .with(CompressionStatus::new())?
         .with(Profile::new())?
         .build();
-
-    let mut reader = state
-        .universe
-        .get_mut::<StreamReader>(entity)?;
 
     'recv: loop {
         let compressed = state.universe.get::<CompressionStatus>(entity)?.enabled;

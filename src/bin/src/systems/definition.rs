@@ -16,12 +16,12 @@ pub trait System: Send + Sync {
     fn name(&self) -> &'static str;
 }
 
-
 pub fn create_systems() -> Vec<Arc<dyn System>> {
     vec![
         Arc::new(TcpListenerSystem),
         Arc::new(KeepAliveSystem::new()),
         Arc::new(TickingSystem),
+        Arc::new(SchedulerSystem),
     ]
 }
 pub async fn start_all_systems(state: GlobalState) -> NetResult<()> {

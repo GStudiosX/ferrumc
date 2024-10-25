@@ -1,5 +1,5 @@
 use std::io::Read;
-use std::sync::{Arc, LazyLock};
+use std::sync::Arc;
 use tracing::trace;
 use ferrumc_macros::{packet, Event};
 use ferrumc_net_codec::decode::{NetDecode, NetDecodeOpts, NetDecodeResult};

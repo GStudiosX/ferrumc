@@ -34,7 +34,6 @@ ferrumc-world = { workspace = true }
 ferrumc-macros = { workspace = true }
 ferrumc-nbt = { workspace = true }
 ferrumc-scheduler = { workspace = true }
-ferrumc-config = { workspace = true }
 
 ctor = { workspace = true }
 parking_lot = { workspace = true }
