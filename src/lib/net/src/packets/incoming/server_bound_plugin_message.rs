@@ -82,7 +82,7 @@ impl NetDecode for LoginPluginResponse {
 
 impl IncomingPacket for LoginPluginResponse {
     async fn handle(self, conn_id: usize, state: Arc<ServerState>) -> NetResult<()> {
-        trace!("Received login plugin message: {:?}", self);
+        //trace!("Received login plugin message: {:?}", self);
 
         LoginPluginResponseEvent::trigger(LoginPluginResponseEvent {
             entity: conn_id,

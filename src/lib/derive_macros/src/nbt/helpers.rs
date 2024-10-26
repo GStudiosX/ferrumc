@@ -6,6 +6,10 @@ use syn::{Field, LitStr, Meta};
 pub enum NbtFieldAttribute {
     /// Represents the `rename` attribute, e.g., `#[nbt(rename = "new_name")]`.
     Rename { new_name: String },
+    /// Flatten the contents of this field into the container it is defined in.
+    Flatten,
+    /// Field will be skip if the condition is true.
+    SkipIf { condition: String },
     /// If the field should be completely skipped, and use field's Default method.
     Skip,
     /// If the field is optional or not
@@ -44,8 +48,22 @@ impl NbtFieldAttribute {
                             new_name: rename.value(),
                         });
                     }
+                    "skip_if" => {
+                        let skip_if = nested_meta
+                            .value()
+                            .expect("Expected rename to have a value");
+                        let skip_if = skip_if
+                            .parse::<LitStr>()
+                            .expect("Expected skip_if to be a string");
+                        attributes.push(NbtFieldAttribute::SkipIf {
+                            condition: skip_if.value(),
+                        });
+                    }
                     "skip" => {
                         attributes.push(NbtFieldAttribute::Skip);
+                    }
+                    "flatten" => {
+                        attributes.push(NbtFieldAttribute::Flatten);
                     }
                     _ => panic!("Unknown attribute: {}", name),
                 }

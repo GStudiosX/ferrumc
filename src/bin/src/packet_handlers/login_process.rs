@@ -10,15 +10,14 @@ use ferrumc_net::packets::outgoing::client_bound_known_packs::ClientBoundKnownPa
 use ferrumc_net::packets::outgoing::game_event::GameEventPacket;
 use ferrumc_net::packets::outgoing::keep_alive::{KeepAlive, KeepAlivePacket};
 use ferrumc_net::packets::outgoing::login_play::LoginPlayPacket;
-use ferrumc_net::packets::outgoing::login_success::LoginSuccessPacket;
 use ferrumc_net::packets::outgoing::registry_data::{get_registry_packets};
 use ferrumc_net::GlobalState;
 use ferrumc_net_codec::encode::NetEncodeOpts;
-use ferrumc_net::packets::outgoing::finish_configuration::FinishConfigurationPacket;
 use tracing::{debug, trace, info};
 use ferrumc_net::packets::outgoing::client_bound_plugin_message::ConfigurationPluginMessagePacket;
 use ferrumc_net::packets::outgoing::set_default_spawn_position::SetDefaultSpawnPositionPacket;
 use ferrumc_net::packets::outgoing::synchronize_player_position::SynchronizePlayerPositionPacket;
+use ferrumc_net::packets::outgoing::finish_configuration::FinishConfigurationPacket;
 use ferrumc_net::packets::outgoing::player_info_update::{PlayerInfoUpdatePacket, PlayerActions, PlayerInfo, PlayerAction};
 use std::sync::Arc;
 
@@ -27,18 +26,7 @@ async fn handle_login_start(
     login_start_event: LoginStartEvent,
     state: GlobalState,
 ) -> Result<LoginStartEvent, NetError> {
-    debug!("Handling login start event");
-
-
-    let uuid = login_start_event.login_start_packet.uuid;
-    let username = login_start_event.login_start_packet.username.as_str();
-    debug!("Received login start from user with username {}", username);
-    
     //Send a Login Success Response to further the login sequence
-    let mut writer = state
-        .universe
-        .get_mut::<StreamWriter>(login_start_event.conn_id)?;
-
     info!("Handling login start event");
 
     let uuid = login_start_event.login_start_packet.uuid;
@@ -53,7 +41,6 @@ async fn handle_login_start(
     
     match RwEvent::<PlayerStartLoginEvent>::trigger(event.clone(), Arc::clone(&state)).await {
         Err(NetError::Kick(msg)) => Err(NetError::Kick(msg)),
-        Err(_) => Ok(login_start_event),
         _ => {
             if let Some(event) = event.into_inner() {
                 ferrumc::internal::send_login_success(
@@ -111,7 +98,7 @@ async fn handle_server_bound_known_packs(
     writer.send_packet(&registry_packets, &NetEncodeOpts::None).await?;
     
     writer.send_packet(&FinishConfigurationPacket::new(), &NetEncodeOpts::WithLength).await?;
-    
+
     Ok(server_bound_known_packs_event)
 }
 
@@ -147,7 +134,7 @@ async fn handle_ack_finish_configuration(
             PlayerInfo {
                 uuid: profile.uuid,
                 actions: vec![
-                    PlayerAction::add_player(&profile),
+                    PlayerAction::add_player(profile),
                     PlayerAction::UpdateListed(true)
                 ]
             }

@@ -3,7 +3,7 @@ use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
 use syn::spanned::Spanned;
-use syn::{Data, Fields};
+use syn::{Data, Fields, Expr};
 
 pub fn derive(input: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
@@ -30,6 +30,8 @@ pub fn derive(input: TokenStream) -> TokenStream {
                 let attributes = NbtFieldAttribute::from_field(field);
 
                 let mut skip = false;
+                let mut skip_if: Option<Expr> = None;
+                let mut flatten = false;
 
                 for attr in attributes {
                     match attr {
@@ -39,6 +41,17 @@ pub fn derive(input: TokenStream) -> TokenStream {
                         NbtFieldAttribute::Skip => {
                             skip = true;
                         }
+                        NbtFieldAttribute::Flatten => {
+                            flatten = true;
+                        }
+                        NbtFieldAttribute::SkipIf { condition } => {
+                            if skip {
+                                return quote! {};
+                            }
+
+                            let condition = syn::parse_str::<Expr>(&condition).unwrap();
+                            skip_if = Some(condition);
+                        }
                         _ => {}
                     }
                 }
@@ -47,8 +60,22 @@ pub fn derive(input: TokenStream) -> TokenStream {
                     return quote! {};
                 }
 
-                quote! {
-                    <#ty as ::ferrumc_nbt::NBTSerializable>::serialize(&self.#ident, writer, &::ferrumc_nbt::NBTSerializeOptions::WithHeader(#serialize_name));
+                if flatten {
+                    return quote! {
+                        <#ty as ::ferrumc_nbt::NBTSerializable>::serialize(&self.#ident, writer, &::ferrumc_nbt::NBTSerializeOptions::None);
+                    };
+                }
+
+                if let Some(condition) = skip_if {
+                    quote! {
+                        if !#condition (&self.#ident) {
+                            <#ty as ::ferrumc_nbt::NBTSerializable>::serialize(&self.#ident, writer, &::ferrumc_nbt::NBTSerializeOptions::WithHeader(#serialize_name));
+                        }
+                    }
+                } else {
+                    quote! {
+                        <#ty as ::ferrumc_nbt::NBTSerializable>::serialize(&self.#ident, writer, &::ferrumc_nbt::NBTSerializeOptions::WithHeader(#serialize_name));
+                    }
                 }
             });
 
@@ -149,13 +176,16 @@ pub fn derive(input: TokenStream) -> TokenStream {
                     }
                     ::ferrumc_nbt::NBTSerializeOptions::Network => {
                         <u8 as ::ferrumc_nbt::NBTSerializable>::serialize(&Self::id(), writer, &::ferrumc_nbt::NBTSerializeOptions::None);
+                        <u16 as ::ferrumc_nbt::NBTSerializable>::serialize(&0u16, writer, &::ferrumc_nbt::NBTSerializeOptions::None);                        
                     }
                     ::ferrumc_nbt::NBTSerializeOptions::None => {}
                 }
 
                 #serialize_impl
 
-                <u8 as ::ferrumc_nbt::NBTSerializable>::serialize(&0u8, writer, &::ferrumc_nbt::NBTSerializeOptions::None);
+                if options != &::ferrumc_nbt::NBTSerializeOptions::None {
+                    <u8 as ::ferrumc_nbt::NBTSerializable>::serialize(&0u8, writer, &::ferrumc_nbt::NBTSerializeOptions::None);
+                }
             }
 
             fn id() -> u8 {

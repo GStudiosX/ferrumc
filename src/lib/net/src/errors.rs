@@ -43,11 +43,17 @@ pub enum NetError {
     Packet(#[from] PacketError),
 
     #[error("{0}")]
-    Kick(String),
+    Kick(ferrumc_text::TextComponent),
 }
 
 #[derive(Debug, Error)]
 pub enum PacketError {
     #[error("Invalid State: {0}")]
     InvalidState(u8),
+}
+
+impl NetError {
+    pub fn kick<T: Into<ferrumc_text::TextComponent> + Send + Sync>(component: T) -> Self {
+        Self::Kick(component.into())
+    }
 }

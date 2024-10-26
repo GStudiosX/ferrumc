@@ -10,7 +10,7 @@ pub struct SchedulerSystem;
 #[async_trait]
 impl System for SchedulerSystem {
     async fn start(&self, state: GlobalState) {
-         //get_scheduler().run(Arc::clone(&state)).await;
+         get_scheduler().run(Arc::clone(&state)).await;
     }
 
     async fn stop(&self, _state: GlobalState) {

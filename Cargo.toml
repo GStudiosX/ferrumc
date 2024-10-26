@@ -26,7 +26,7 @@ members = [
     "src/lib/adapters/nbt",
     "src/lib/adapters/mca",
     "src/tests",
-    "src/lib/scheduler",
+    "src/lib/scheduler", "src/lib/text",
 ]
 
 #================== Lints ==================#
@@ -91,6 +91,7 @@ ferrumc-scheduler = { path = "src/lib/scheduler" }
 ferrumc-nbt = { path = "src/lib/adapters/nbt" }
 ferrumc-mca = { path = "src/lib/adapters/mca" }
 ferrumc-tests = { path = "src/tests" }
+ferrumc-text = { path = "src/lib/text" }
 
 # Asynchronous
 tokio = { version = "1.40.0", features = ["full"] }
@@ -117,9 +118,11 @@ anyhow = "1.0.90"
 # Cryptography
 rsa = "0.9.6"
 rand = "0.9.0-alpha.2"
+hmac = "0.12.1"
+sha2 = "0.10.8"
 
 # Encoding/Serialization
-serde = "1.0.210"
+serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.128"
 serde_derive = "1.0.210"
 base64 = "0.22.1"
@@ -129,7 +132,7 @@ bitmask-enum = "2.2.4"
 hashbrown = "0.15.0"
 tinyvec = "1.8.0"
 dashmap = "6.1.0"
-uuid = "1.11.0"
+uuid = { version = "1.11.0", features = ["v4", "v3"] }
 
 # Macros
 lazy_static = "1.5.0"

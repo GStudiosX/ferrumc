@@ -37,7 +37,7 @@ impl_for_primitives!(
 );
 
 impl NetDecode for () {
-    fn decode<R: Read>(reader: &mut R, _: &NetDecodeOpts) -> NetDecodeResult<Self> {
+    fn decode<R: Read>(_reader: &mut R, _: &NetDecodeOpts) -> NetDecodeResult<Self> {
         Ok(())
     }
 }

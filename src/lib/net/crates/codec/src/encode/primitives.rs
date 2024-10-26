@@ -45,11 +45,11 @@ impl_for_primitives!(
 );
 
 impl NetEncode for () {
-    fn encode<W: Write>(&self, writer: &mut W, _: &NetEncodeOpts) -> NetEncodeResult<()> {
+    fn encode<W: Write>(&self, _writer: &mut W, _: &NetEncodeOpts) -> NetEncodeResult<()> {
         Ok(())
     }
 
-    async fn encode_async<W: AsyncWrite + Unpin>(&self, writer: &mut W, opts: &NetEncodeOpts) -> NetEncodeResult<()> {
+    async fn encode_async<W: AsyncWrite + Unpin>(&self, _writer: &mut W, _: &NetEncodeOpts) -> NetEncodeResult<()> {
         Ok(())
     }
 }

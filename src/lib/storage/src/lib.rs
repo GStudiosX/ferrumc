@@ -7,6 +7,7 @@ use crate::errors::StorageError;
 use std::path::PathBuf;
 
 /// A trait for compressors. This is used to abstract away the compression and decompression of data.
+///
 /// This is primarily used for the database to compress data before writing it to disk, but it can be used
 /// for other purposes as well.
 pub trait Compressor {
@@ -46,6 +47,7 @@ pub trait Compressor {
 }
 
 /// A trait for database backends. This is used to abstract away the underlying database implementation.
+///
 /// This allows for easy swapping of databases without changing the rest of the code. These functions are
 /// purely for storage and retrieval of data. Any other functionality such as serialization or caching
 /// should be implemented in a separate layer.

@@ -7,6 +7,7 @@ pub trait NBTSerializable {
 
 /// Options for serializing NBT data.
 /// To simplify root serialization.
+#[derive(PartialEq, Debug)]
 pub enum NBTSerializeOptions<'a> {
     None,
     WithHeader(&'a str),

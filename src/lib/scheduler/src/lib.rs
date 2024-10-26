@@ -8,7 +8,8 @@ use std::error::Error;
 use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::{Arc, Mutex};
+use tokio::sync::Mutex;
+use std::sync::Arc;
 use tokio::sync::Notify;
 use tokio::time::{sleep_until, Duration, Instant};
 use tracing::error;
@@ -55,7 +56,7 @@ impl ScheduledTask {
     }
 
     pub async fn run(&self, state: Arc<ServerState>) -> anyhow::Result<()> {
-        if self.cancel.is_cancelled() {
+        if self.cancel.is_cancelled().await {
             Err(CancelError.into())
         } else {
             (self.runnable)(state).await
@@ -91,21 +92,19 @@ impl TaskCancel {
         Self(Arc::new(Mutex::new(false)))
     }
 
-    pub fn cancel(&self) -> bool {
-        match self.0.lock() {
-            Ok(mut guard) => {
-                *guard = true;
-                true
-            }
-            Err(_) => false,
-        }
+    pub async fn cancel(&self) -> bool {
+        *self.0.lock().await = true;
+        true
     }
 
-    pub fn is_cancelled(&self) -> bool {
-        match self.0.lock() {
-            Ok(guard) => *guard,
-            Err(_) => true,
-        }
+    pub async fn is_cancelled(&self) -> bool {
+        *self.0.lock().await
+    }
+}
+
+impl Default for TaskCancel {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -123,7 +122,7 @@ impl Scheduler {
     }
 
     /// Schedules a async task
-    pub fn schedule_task<F, Fut>(
+    pub async fn schedule_task<F, Fut>(
         &self,
         cb: F,
         delay: Duration,
@@ -145,7 +144,7 @@ impl Scheduler {
             cancel.clone(),
         );
         {
-            let mut queue = self.task_queue.lock().unwrap();
+            let mut queue = self.task_queue.lock().await;
             queue.push(scheduled_task);
         }
         // Wake up the scheduler
@@ -154,9 +153,15 @@ impl Scheduler {
         cancel
     }
 
+    // this should be safe as I drop the queue mutex guard
+    // before an .await call. https://rust-lang.github.io/rust-clippy/master/index.html#await_holding_lock
+    //
+    // note: this may not be needed anymore since I use a await aware Mutex.
+    // tokio::sync::Mutex
+    #[allow(clippy::await_holding_lock)] 
     pub async fn run(self: Arc<Self>, state: Arc<ServerState>) {
         loop {
-            let mut queue = self.task_queue.lock().unwrap();
+            let mut queue = self.task_queue.lock().await;
             if let Some(task) = queue.peek() {
                 if task.period <= Instant::now() {
                     let task = queue.pop().unwrap();
@@ -182,7 +187,7 @@ impl Scheduler {
                                     task.cancel,
                                 );
                                 {
-                                    let mut queue = scheduler.task_queue.lock().unwrap();
+                                    let mut queue = scheduler.task_queue.lock().await;
                                     queue.push(scheduled_task);
                                 }
                                 // Wake up the scheduler
@@ -203,5 +208,11 @@ impl Scheduler {
                 self.wake.notified().await;
             }
         }
+    }
+}
+
+impl Default for Scheduler {
+    fn default() -> Self {
+        Self::new()
     }
 }

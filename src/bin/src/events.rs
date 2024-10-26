@@ -18,14 +18,14 @@ use std::sync::{Arc, RwLock};
 #[derive(Clone)]
 pub struct RwEvent<T>
 where
-    T: Event + Send + Sync + ?Sized,
+    T: Event + Send + Sync,
 {
     inner: Arc<RwLock<T>>,
 }
 
 impl<T> RwEvent<T>
 where
-    T: Event + Send + Sync + ?Sized,
+    T: Event + Send + Sync,
 {
     pub fn new(event: T) -> Self {
         Self { inner: Arc::new(RwLock::new(event)) }
@@ -50,7 +50,7 @@ where
 
 impl<T> Event for RwEvent<T>
 where
-    T: Event + Send + Sync + ?Sized,
+    T: Event + Send + Sync,
 {
     type Data = Self;
     type State = T::State;

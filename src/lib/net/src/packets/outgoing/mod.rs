@@ -12,3 +12,4 @@ pub mod game_event;
 pub mod update_time;
 pub mod client_bound_plugin_message;
 pub mod player_info_update;
+pub mod disconnect;

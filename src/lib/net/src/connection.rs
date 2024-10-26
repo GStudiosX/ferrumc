@@ -16,8 +16,10 @@ use std::io::Write;
 use std::io::Read;
 use tokio::io::AsyncWriteExt;
 use crate::errors::NetError;
+use ferrumc_text::*;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
+#[repr(u8)]
 pub enum ConnectionState {
     Handshaking,
     Status,
@@ -73,7 +75,7 @@ impl NetDecode for ProfileProperty {
 impl GameProfile {
     pub fn new(uuid: u128, username: String) -> Self {
         Self {
-            uuid: uuid,
+            uuid,
             username,
             properties: LengthPrefixedVec::new(vec![
                 /*ProfileProperty {
@@ -116,6 +118,16 @@ impl StreamWriter {
             .await?;
         Ok(())
     }
+
+    pub async fn kick<S: Into<JsonTextComponent>>(&mut self, conn_state: &ConnectionState, reason: S) -> NetResult<()> {
+        let packet = if conn_state == &ConnectionState::Login {
+            crate::packets::outgoing::disconnect::LoginDisconnect::new(reason)
+        } else {
+            return Err(NetError::InvalidState(conn_state.clone() as u8));
+        };
+
+        self.send_packet(&packet, &NetEncodeOpts::WithLength).await
+    }
 }
 
 pub struct Profile {
@@ -127,6 +139,12 @@ impl Profile {
         Self {
             profile: None,
         }
+    }
+}
+
+impl Default for Profile {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -167,7 +185,7 @@ pub async fn handle_connection(state: Arc<ServerState>, tcp_stream: TcpStream) -
         .with(StreamWriter::new(writer))?
         .with(ConnectionState::Handshaking)?
         .with(CompressionStatus::new())?
-        .with(Profile::new())?
+        .with(Profile::new())? // initialize with empty profile
         .build();
 
     'recv: loop {
@@ -198,12 +216,16 @@ pub async fn handle_connection(state: Arc<ServerState>, tcp_stream: TcpStream) -
             Ok(_) => {},
             Err(NetError::Kick(msg)) => {
                 warn!("Failed to handle packet: {:?}. packet_id: {:02X}; conn_state: {}", e, packet_skele.id, conn_state.as_str());
-                // Kick the player (when implemented).
+                let _ = state.universe.get_mut::<StreamWriter>(entity)?
+                    .kick(&conn_state, msg)
+                    .await;
                 break 'recv;
             },
             Err(e) => {
                 warn!("Failed to handle packet: {:?}. packet_id: {:02X}; conn_state: {}", e, packet_skele.id, conn_state.as_str());
-                // Kick the player (when implemented).
+                let _ = state.universe.get_mut::<StreamWriter>(entity)?
+                    .kick(&conn_state, TextComponent::from("§cDisconnected".to_string()))
+                    .await;
                 break 'recv;
 	    }
         }

@@ -22,10 +22,14 @@ mod systems;
 pub type Result<T> = std::result::Result<T, errors::BinaryError>;
 
 use ferrumc::{
-    events::{event_handler, LoginPluginResponseEvent, PlayerStartLoginEvent, GlobalState, NetError, RwEvent, EventsError},
-    EntityExt, NetDecodeOpts, NetDecode, NetEncodeOpts, StreamWriter, ServerState, NetResult,
-    net_types::var_int::VarInt, GameProfile
+    events::{event_handler, LoginPluginResponseEvent, PlayerStartLoginEvent, PlayerJoinGameEvent, GlobalState, NetError, RwEvent, EventsError},
+    EntityExt, NetDecodeOpts, NetDecode, NetEncodeOpts, 
+    macros::{NetEncode, packet}, StreamWriter, ServerState, NetResult,
+    Profile, GameProfile, net_types::var_int::VarInt,
+    text::*
 };
+use tokio::io::AsyncWriteExt;
+use std::io::Write;
 use sha2::Sha256;
 use hmac::{Hmac, Mac};
 
@@ -48,7 +52,7 @@ async fn handle_login_start(
         state.universe.add_component(ev.entity, VelocityMessageId(id))?;
 
         // this stops the packet hqndler from doing login success
-        Err(NetError::EventsError(EventsError::Other(format!("cancel login success"))))
+        Err(NetError::EventsError(EventsError::Other("cancel login success".to_string())))
     } else {
         Ok(event)
     }
@@ -77,22 +81,33 @@ async fn handle_velocity_response(
             buf.set_position(index);
 
             let version = VarInt::decode(&mut buf, &NetDecodeOpts::None)?;
-            let addr = String::decode(&mut buf, &NetDecodeOpts::None)?;
+            let _addr = String::decode(&mut buf, &NetDecodeOpts::None)?;
 
-            info!("{}", addr);
+            //info!("{}", addr);
 
             if version != 1 {
-                return Err(NetError::Kick(format!("Unsupported forwarding version")))
+                return Err(NetError::kick(TextComponentBuilder::new("[FerrumC]")
+                    .color(NamedColor::Blue)
+                    .space()
+                    .extra(ComponentBuilder::text("This velocity modern forwarding version is not supported!")
+                        .color(NamedColor::Red))
+                    .build()));
             }
         } else {
-            return Err(NetError::Kick(format!("Forwarding Information was not sent")))
+            return Err(NetError::kick(ComponentBuilder::text("[FerrumC]")
+                .color(NamedColor::Blue)
+                .space()
+                .extra(ComponentBuilder::text("The velocity proxy did not send forwarding information!")
+                    .color(NamedColor::Red))
+                .build()));
+            //return Err(NetError::kick("§cForwarding Information was not sent".to_string()))
         }
 
         let mut key = HmacSha256::new_from_slice(ferrumc_config::get_global_config().velocity.secret.as_bytes())
             .expect("Failed to create HmacSha256 for velocity secret");
         key.update(&data);
 
-        if let Ok(_) = key.verify_slice(&signature[..]) {
+        if key.verify_slice(&signature[..]).is_ok() {
             ferrumc::internal::send_login_success(
                 event.entity,
                 GameProfile::decode(&mut buf, &NetDecodeOpts::None)?,
@@ -101,11 +116,44 @@ async fn handle_velocity_response(
 
             Ok(event)
         } else {
-            return Err(NetError::Kick(format!("Invalid proxy response!")));
+            Err(NetError::kick("Invalid proxy response!".to_string()))
         }
     } else {
         Ok(event)
     }
+}
+
+// test
+#[derive(NetEncode)]
+#[packet(packet_id = 0x6C)]
+struct SystemChatMessage {
+    message: TextComponent,
+    overlay: bool,
+}
+
+#[event_handler]
+async fn test_join(
+    event: PlayerJoinGameEvent,
+    state: GlobalState,
+) -> NetResult<PlayerJoinGameEvent> {
+    let entity = event.entity.clone();
+    get_scheduler().schedule_task(move |state| async move {
+        let mut writer = entity
+            .get_mut::<StreamWriter>(Arc::clone(&state))?;
+        let profile = entity
+            .get::<Profile>(Arc::clone(&state))?;
+
+        writer.send_packet(&SystemChatMessage {
+            message: ComponentBuilder::text("Hello, World!")
+                .color(NamedColor::Blue)
+                .build(),
+            overlay: false,
+        }, &NetEncodeOpts::WithLength).await?;
+
+        Ok(())
+    }, std::time::Duration::from_secs(5), None).await;
+
+    Ok(event)
 }
 
 #[tokio::main]

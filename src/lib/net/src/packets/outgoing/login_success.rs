@@ -14,6 +14,9 @@ impl LoginSuccessPacket {
     {
         Self {
             profile,
+            #[cfg(debug_assertions)]
+            strict_error_handling: true,
+            #[cfg(not(debug_assertions))]
             strict_error_handling: false,
         }
     }

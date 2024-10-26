@@ -3,6 +3,7 @@
 
 use std::sync::Arc;
 use ferrumc_scheduler::Scheduler;
+use lazy_static::lazy_static;
 
 pub use ferrumc_net_codec::encode::{NetEncodeOpts, NetEncode};
 pub use ferrumc_net_codec::decode::{NetDecodeOpts, NetDecode};
@@ -11,10 +12,15 @@ pub use ferrumc_net::{ServerState, connection::{StreamWriter, StreamReader, Game
 pub use ferrumc_net::NetResult;
 
 pub use ferrumc_core::identity::player_identity::PlayerIdentity;
-
 pub use ferrumc_net_codec::*;
 
-use lazy_static::lazy_static;
+pub mod macros {
+    pub use ferrumc_macros::{NetEncode, NetDecode, packet};
+}
+
+pub mod text {
+    pub use ferrumc_text::{*, color::*};
+}
 
 /// Event API
 pub mod events;
@@ -49,7 +55,7 @@ pub mod internal {
 }
 
 lazy_static! {
-    static ref SCHEDULER: Arc<Scheduler> = Arc::new(Scheduler::new());
+    static ref SCHEDULER: Arc<Scheduler> = Arc::new(Scheduler::default());
 }
 
 pub fn get_scheduler() -> Arc<Scheduler> {
