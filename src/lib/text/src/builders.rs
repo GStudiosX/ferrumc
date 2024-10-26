@@ -1,5 +1,7 @@
 use crate::{*, color::Color};
 
+/// Build a component (text, translate, keybind).
+///
 pub struct ComponentBuilder {
     _private: ()
 }
@@ -12,12 +14,23 @@ impl ComponentBuilder {
 
     #[inline]
     pub fn keybind<S: Into<String>>(keybind: S) -> TextComponent {
-        TextComponent {
+        TextComponent(TextInner {
             content: TextContent::Keybind {
                 keybind: keybind.into()
             },
             ..Default::default()
-        }
+        })
+    }
+
+    #[inline]
+    pub fn translate<S: Into<String>>(translate: S, with: Vec<TextComponent>) -> TextComponent {
+        TextComponent(TextInner {
+            content: TextContent::Translate {
+                translate: translate.into(),
+                with,
+            },
+            ..Default::default()
+        })
     }
 
     #[inline]
@@ -26,6 +39,17 @@ impl ComponentBuilder {
     }
 }
 
+/// A builder to build a TextComponent of type text.
+///
+/// ```rust
+/// # use ferrumc_text::color::*;
+/// # use ferrumc_text::ComponentBuilder;
+/// let _ = ComponentBuilder::text("Hello,")
+///     .color(NamedColor::Red)
+///     .space()
+///     .extra(ComponentBuilder::text("World!"))
+///     .build();
+/// ```
 #[derive(Default)]
 pub struct TextComponentBuilder {
     pub(crate) text: String,
@@ -66,7 +90,7 @@ impl TextComponentBuilder {
     }
 
     pub fn build(self) -> TextComponent {
-        TextComponent {
+        TextComponent(TextInner {
             content: TextContent::Text {
                 text: self.text,
             },
@@ -77,7 +101,7 @@ impl TextComponentBuilder {
             strikethrough: self.strikethrough,
             obfuscated: self.obfuscated,
             extra: self.extra
-        }
+        })
     }
 }
 

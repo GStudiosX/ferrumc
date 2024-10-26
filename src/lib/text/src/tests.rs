@@ -59,18 +59,18 @@ async fn test_serialize_to_nbt() {
         .build();
     //println!("{:#?}", component.color);
     println!("{}", component.to_string());
-    println!("{}", bytes_to_readable_string(&component.serialize_as_network()[..]));
+    println!("{}", bytes_to_readable_string(&component.serialize_nbt()[..]));
 
-    println!("{}", component.serialize_as_network().len());
+    println!("{}", component.serialize_nbt().len());
 
-    println!("\n{}", bytes_to_readable_string(&component.content.serialize_as_network()[..]));
+    //println!("\n{}", bytes_to_readable_string(&component.content.serialize_as_network()[..]));
 
     let mut file = File::create("foo.nbt").unwrap();
     /*let mut bytes = Vec::new();
     NBTSerializable::serialize(&vec![component.clone()], &mut bytes, &NBTSerializeOptions::Network);
     file.write_all(&bytes).unwrap();
     println!("\n{}\n", bytes_to_readable_string(&bytes[..]));*/
-    file.write_all(&component.serialize_as_network()[..]).unwrap();
+    file.write_all(&component.serialize_nbt()[..]).unwrap();
 
     let mut cursor = Cursor::new(Vec::new());
     TestPacket::encode_async(&TestPacket {
@@ -87,7 +87,7 @@ async fn test_serialize_to_nbt() {
     let length = VarInt::decode(&mut cursor, &NetDecodeOpts::None).unwrap();
     let id = VarInt::decode(&mut cursor, &NetDecodeOpts::None).unwrap();
 
-    println!("{}\n", bytes_to_string(&component.serialize_as_network()[..]));
+    println!("{}\n", bytes_to_string(&component.serialize_nbt()[..]));
 
     println!("id: {}, length: {}, left: {}", id.val, length.val, length.val as u64 - cursor.position());
     println!("{}", bytes_to_readable_string(&cursor.get_ref()[cursor.position() as usize..]));

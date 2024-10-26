@@ -21,7 +21,11 @@ mod velocity;
 pub type Result<T> = std::result::Result<T, errors::BinaryError>;
 
 // test
-/*#[derive(NetEncode)]
+use ferrumc::{macros::{NetEncode, packet}, NetEncode, events::{PlayerJoinGameEvent, GlobalState, event_handler}, text::*, Profile, NetEncodeOpts, StreamWriter, EntityExt, NetResult, get_scheduler};
+use std::io::Write;
+use tokio::io::AsyncWriteExt;
+
+#[derive(NetEncode)]
 #[packet(packet_id = 0x6C)]
 struct SystemChatMessage {
     message: TextComponent,
@@ -55,7 +59,7 @@ async fn test_join(
     }, std::time::Duration::from_secs(5), None).await;
 
     Ok(event)
-}*/
+}
 
 #[tokio::main]
 async fn main() {

@@ -2,31 +2,48 @@ use crate::*;
 use ferrumc_net_codec::encode::{
     NetEncode, NetEncodeOpts, errors::NetEncodeError
 };
+use ferrumc_nbt::{NBTSerializable, NBTSerializeOptions};
 use std::io::Write;
 use std::marker::Unpin;
 use tokio::io::AsyncWriteExt;
 use std::fmt;
 use std::ops::Add;
+use std::str::FromStr;
+use std::ops::{Deref, DerefMut};
+
+impl Deref for TextComponent {
+    type Target = TextInner;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for TextComponent {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl From<String> for TextComponent {
     fn from(value: String) -> Self {
-        Self {
+        Self(TextInner {
             content: TextContent::Text {
                 text: value,
             },
             ..Default::default()
-        }
+        })
     }
 }
 
 impl From<&str> for TextComponent {
     fn from(value: &str) -> Self {
-        Self {
+        Self(TextInner {
             content: TextContent::Text {
                 text: value.into(),
             },
             ..Default::default()
-        }
+        })
     }
 }
 
@@ -54,6 +71,18 @@ where
     }
 }
 
+impl FromStr for TextComponent {
+    type Err = serde_json::error::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.is_empty() {
+            Ok(Self::default())
+        } else {
+            serde_json::from_str(s)
+        }
+    }
+}
+
 impl Into<String> for TextComponent {
     fn into(self) -> String {
         serde_json::to_string(&self).unwrap()
@@ -70,16 +99,11 @@ impl fmt::Display for TextComponent {
     }
 }
 
-/*fn serialize_none(v: &TextComponent) -> Vec<u8> {
-}*/
-
 impl TextComponent {
-    fn serialize_nbt(&self) -> Vec<u8> {
-        /*use ferrumc_nbt::{NBTSerializable, NBTSerializeOptions};
+    pub fn serialize_nbt(&self) -> Vec<u8> {
         let mut vec = Vec::new();
         NBTSerializable::serialize(self, &mut vec, &NBTSerializeOptions::None);
-        vec*/
-        self.serialize_as_network()
+        vec
     }
 }
 
@@ -93,6 +117,22 @@ impl NetEncode for TextComponent {
         writer.write_all(&self.serialize_nbt()[..]).await?;
         Ok(())
     }
+}
+
+impl NBTSerializable for TextComponent {
+    fn serialize(&self, buf: &mut Vec<u8>, _: &NBTSerializeOptions<'_>) {
+        // list
+        NBTSerializable::serialize(&Self::id(), buf, &NBTSerializeOptions::None);
+        NBTSerializable::serialize(&0u16, buf, &NBTSerializeOptions::None);        
+        //NBTSerializable::serialize(&10u8, buf, &NBTSerializeOptions::None);        
+        //NBTSerializable::serialize(&1u32, buf, &NBTSerializeOptions::None);        
+
+        // compound
+        NBTSerializable::serialize(&self.0, buf, &NBTSerializeOptions::None);
+        NBTSerializable::serialize(&0u8, buf, &NBTSerializeOptions::None);        
+    }
+
+    fn id() -> u8 { 10 }
 }
 
 impl Default for TextContent {
