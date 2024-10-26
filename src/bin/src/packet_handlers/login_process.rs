@@ -131,7 +131,7 @@ async fn handle_ack_finish_configuration(
         .universe
         .get::<Profile>(ack_finish_configuration_event.conn_id)?
         .profile {
-        let info_update = PlayerInfoUpdatePacket::new(PlayerActions::AddPlayer | PlayerActions::UpdateListed, vec![
+        let info_update = PlayerInfoUpdatePacket::new(vec![
             PlayerInfo {
                 uuid: profile.uuid,
                 actions: vec![

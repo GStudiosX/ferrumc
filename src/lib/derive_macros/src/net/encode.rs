@@ -413,7 +413,7 @@ pub(crate) fn derive(input: TokenStream) -> TokenStream {
         where_clause,
         lifetime: _lifetime,
         ..
-    } = crate::helpers::extract_struct_info(input, None);
+    } = crate::helpers::extract_struct_info(&input, None);
 
     TokenStream::from(quote! {
         impl #impl_generics ferrumc_net_codec::encode::NetEncode for #struct_name #ty_generics #where_clause {
