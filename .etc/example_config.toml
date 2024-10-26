@@ -10,3 +10,9 @@ network_compression_threshold = 256  # Compression threshold for network packets
 [database]
 cache_size = 2048  # Cache size in KB
 compression = "fast" # Compression settings (none, fast, best)
+
+# Velocity configuration
+[velocity]
+enabled = false
+# The key from forwarding.secret
+secret = ""

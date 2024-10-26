@@ -18,4 +18,5 @@ pub mod favicon;
 // Re-exports
 pub use server_config::DatabaseCompression;
 pub use server_config::DatabaseConfig;
+pub use server_config::VelocityConfig;
 pub use server_config::ServerConfig;

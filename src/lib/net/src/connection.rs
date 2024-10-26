@@ -240,34 +240,33 @@ pub async fn handle_connection(state: Arc<ServerState>, tcp_stream: TcpStream) -
         }
 
         let conn_state = state.universe.get::<ConnectionState>(entity)?.clone();
-
-        match handle_packet(
+        if let Err(e) = handle_packet(
             packet_skele.id,
             entity,
             &conn_state,
             &mut packet_skele.data,
-            Arc::clone(&state)
+            Arc::clone(&state),
         )
             .await
             .instrument(debug_span!("eid", %entity))
             .inner()
         {
-            Ok(_) => {},
-            Err(NetError::Kick(msg)) => {
-                warn!("Failed to handle packet: {:?}. packet_id: {:02X}; conn_state: {}", e, packet_skele.id, conn_state.as_str());
-                let _ = state.universe.get_mut::<StreamWriter>(entity)?
-                    .kick(&conn_state, msg)
-                    .await;
-                break 'recv;
-            },
-            Err(e) => {
-                warn!("Failed to handle packet: {:?}. packet_id: {:02X}; conn_state: {}", e, packet_skele.id, conn_state.as_str());
-                let _ = state.universe.get_mut::<StreamWriter>(entity)?
-                    .kick(&conn_state, TextComponent::from("§cDisconnected".to_string()))
-                    .await;
-                break 'recv;
-	    }
-        }
+            match e {
+                NetError::Kick(msg) => {
+                    warn!("Failed to handle packet: {}. packet_id: {:02X}; conn_state: {}", msg, packet_skele.id, conn_state.as_str());
+                    let _ = state.universe.get_mut::<StreamWriter>(entity)?
+                        .kick(&conn_state, msg)
+                        .await;
+                },
+                _ => {
+                    warn!("Failed to handle packet: {:?}. packet_id: {:02X}; conn_state: {}", e, packet_skele.id, conn_state.as_str());
+                    let _ = state.universe.get_mut::<StreamWriter>(entity)?
+                        .kick(&conn_state, TextComponent::from("§cDisconnected".to_string()))
+                        .await;
+                }
+            }
+            break 'recv;
+        };
     }
 
     debug!("Connection closed for entity: {:?}", entity);
