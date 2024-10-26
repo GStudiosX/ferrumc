@@ -5,13 +5,10 @@
 #![feature(slice_as_chunks)]
 
 use ferrumc_ecs::Universe;
-use ferrumc_net::ServerState;
-use tracing::{error, info};
 use ferrumc_net::server::create_server_listener;
 use systems::definition;
 use std::sync::Arc;
 use tracing::{error, info, trace};
-use ferrumc::ServerState;
 
 pub(crate) mod errors;
 mod packet_handlers;
@@ -21,9 +18,8 @@ mod velocity;
 pub type Result<T> = std::result::Result<T, errors::BinaryError>;
 
 // test
-use ferrumc::{macros::{NetEncode, packet}, NetEncode, events::{PlayerJoinGameEvent, GlobalState, event_handler}, text::*, Profile, NetEncodeOpts, StreamWriter, EntityExt, NetResult, get_scheduler};
+use ferrumc::{macros::{NetEncode, packet}, events::{PlayerJoinGameEvent, GlobalState, event_handler}, text::*, Profile, NetEncodeOpts, StreamWriter, EntityExt, NetResult, ServerState, get_scheduler, get_global_config};
 use std::io::Write;
-use tokio::io::AsyncWriteExt;
 
 #[derive(NetEncode)]
 #[packet(packet_id = 0x6C)]
@@ -76,7 +72,7 @@ async fn main() {
 }
 
 async fn entry() -> Result<()> {
-    if ferrumc_config::get_global_config().velocity.enabled {
+    if get_global_config().velocity.enabled {
         trace!("Velocity Support Enabled");
     }
 

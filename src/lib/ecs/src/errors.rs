@@ -2,8 +2,8 @@ use thiserror::Error;
 
 #[derive(Debug, Clone, Error)]
 pub enum ECSError {
-    #[error("Component {0} not found")]
-    ComponentNotFound(String),
+    #[error("Component not found")]
+    ComponentNotFound,
     #[error("Component is locked")]
     ComponentLocked,
     #[error("Component type not found")]

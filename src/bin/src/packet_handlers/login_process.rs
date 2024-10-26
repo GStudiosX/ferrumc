@@ -13,13 +13,14 @@ use ferrumc_net::packets::outgoing::login_play::LoginPlayPacket;
 use ferrumc_net::packets::outgoing::registry_data::{get_registry_packets};
 use ferrumc_net::GlobalState;
 use ferrumc_net_codec::encode::NetEncodeOpts;
-use tracing::{debug, trace, info};
+use tracing::{trace, info};
 use ferrumc_net::packets::outgoing::client_bound_plugin_message::ConfigurationPluginMessagePacket;
 use ferrumc_net::packets::outgoing::set_default_spawn_position::SetDefaultSpawnPositionPacket;
 use ferrumc_net::packets::outgoing::synchronize_player_position::SynchronizePlayerPositionPacket;
 use ferrumc_net::packets::outgoing::finish_configuration::FinishConfigurationPacket;
-use ferrumc_net::packets::outgoing::player_info_update::{PlayerInfoUpdatePacket, PlayerActions, PlayerInfo, PlayerAction};
+use ferrumc_net::packets::outgoing::player_info_update::{PlayerInfoUpdatePacket, PlayerInfo, PlayerAction};
 use std::sync::Arc;
+use std::collections::HashSet;
 
 #[event_handler]
 async fn handle_login_start(
@@ -131,16 +132,19 @@ async fn handle_ack_finish_configuration(
         .universe
         .get::<Profile>(ack_finish_configuration_event.conn_id)?
         .profile {
-        let info_update = PlayerInfoUpdatePacket::new(vec![
+        if let Ok(info_update) = PlayerInfoUpdatePacket::new(vec![
             PlayerInfo {
                 uuid: profile.uuid,
-                actions: vec![
+                actions: HashSet::from([
                     PlayerAction::add_player(profile),
                     PlayerAction::UpdateListed(true)
-                ]
+                ])
             }
-        ]);
-        writer.send_packet(&info_update, &NetEncodeOpts::WithLength).await?;
+        ]) {
+            writer.send_packet(&info_update, &NetEncodeOpts::WithLength).await?;
+        } else {
+            return Err(NetError::kick("Disconnected"))
+        }
     }
 
     PlayerJoinGameEvent::trigger(PlayerJoinGameEvent {

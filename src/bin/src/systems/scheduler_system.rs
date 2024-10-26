@@ -9,11 +9,11 @@ pub struct SchedulerSystem;
 
 #[async_trait]
 impl System for SchedulerSystem {
-    async fn start(&self, state: GlobalState) {
+    async fn start(self: Arc<Self>, state: GlobalState) {
          get_scheduler().run(Arc::clone(&state)).await;
     }
 
-    async fn stop(&self, _state: GlobalState) {
+    async fn stop(self: Arc<Self>, _state: GlobalState) {
         debug!("Stopping Scheduler system...");
     }
 

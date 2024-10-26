@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::TcpStream;
-use tracing::{debug, debug_span, trace, warn, Instrument};
+use tracing::{debug, debug_span, trace, warn, error, Instrument};
 use ferrumc_net_codec::{
     encode::{NetEncode, NetEncodeOpts},
     decode::{NetDecode, NetDecodeOpts, NetDecodeResult}, 
@@ -14,7 +14,6 @@ use ferrumc_events::infrastructure::Event;
 use ferrumc_ecs::entities::Entity;
 use std::io::Write;
 use std::io::Read;
-use tokio::io::AsyncWriteExt;
 use crate::errors::NetError;
 use ferrumc_text::*;
 
@@ -60,7 +59,7 @@ impl ConnectionState {
 /// }
 /// ```
 ///
-#[derive(Debug, Clone, NetEncode, NetDecode)]
+#[derive(Debug, Clone, NetEncode, NetDecode, Eq, PartialEq)]
 pub struct GameProfile {
     /// The uuid of this GameProfile
     pub uuid: u128,
@@ -78,7 +77,7 @@ pub struct GameProfile {
 /// `is_signed`: If the Property is signed.
 /// `signature`: The signature of the Property
 ///
-#[derive(Debug, Clone, NetEncode)]
+#[derive(Debug, Clone, NetEncode, Eq, PartialEq)]
 pub struct ProfileProperty {
     /// The name of this Property.
     pub name: String,
@@ -249,7 +248,7 @@ pub async fn handle_connection(state: Arc<ServerState>, tcp_stream: TcpStream) -
         )
             .await
             .instrument(debug_span!("eid", %entity))
-            .inner()
+            .into_inner()
         {
             match e {
                 NetError::Kick(msg) => {

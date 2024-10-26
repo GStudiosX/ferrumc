@@ -1,6 +1,5 @@
 use ferrumc_macros::{packet, NetEncode};
 use std::io::Write;
-use tokio::io::AsyncWriteExt;
 use ferrumc_text::JsonTextComponent;
 
 #[derive(NetEncode)]

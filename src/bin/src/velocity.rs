@@ -4,7 +4,7 @@ use ferrumc::{
     events::{event_handler, LoginPluginResponseEvent, PlayerStartLoginEvent, GlobalState, NetError, RwEvent, EventsError},
     EntityExt, NetDecodeOpts, NetDecode, NetEncodeOpts,
     StreamWriter, NetResult, GameProfile, net_types::var_int::VarInt,
-    text::*
+    text::*, get_global_config
 };
 use tokio::io::AsyncReadExt;
 use sha2::Sha256;
@@ -19,7 +19,7 @@ async fn handle_login_start(
     event: RwEvent<PlayerStartLoginEvent>,
     state: GlobalState,
 ) -> NetResult<RwEvent<PlayerStartLoginEvent>> {
-    if ferrumc_config::get_global_config().velocity.enabled {
+    if get_global_config().velocity.enabled {
         let ev = event.read().unwrap().clone();
 
         let id = rand::random::<u32>();
@@ -79,7 +79,7 @@ async fn handle_velocity_response(
                 .build()));
         }
 
-        let mut key = HmacSha256::new_from_slice(ferrumc_config::get_global_config().velocity.secret.as_bytes())
+        let mut key = HmacSha256::new_from_slice(get_global_config().velocity.secret.as_bytes())
             .expect("Failed to create HmacSha256 for velocity secret");
         key.update(&data);
 

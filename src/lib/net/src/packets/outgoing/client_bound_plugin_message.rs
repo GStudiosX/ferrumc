@@ -4,7 +4,6 @@ use ferrumc_net_codec::{
     net_types::var_int::VarInt
 };
 use std::io::Write;
-use tokio::io::AsyncWriteExt;
 
 #[derive(NetEncode)]
 #[packet(packet_id = 0x01)]

@@ -4,7 +4,7 @@ use crate::decode::{NetDecode, NetDecodeOpts, NetDecodeResult};
 use crate::encode::{NetEncode, NetEncodeOpts, NetEncodeResult};
 use crate::net_types::var_int::VarInt;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct LengthPrefixedVec<T>
 {
     //pub length: VarInt,

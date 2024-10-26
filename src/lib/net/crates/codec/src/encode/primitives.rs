@@ -1,6 +1,6 @@
 use crate::encode::{NetEncode, NetEncodeOpts, NetEncodeResult};
 use crate::net_types::var_int::VarInt;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 
@@ -93,6 +93,37 @@ impl<'a> NetEncode for &'a str {
 impl<T> NetEncode for Vec<T>
 where
     T: NetEncode,
+{
+    fn encode<W: Write>(&self, writer: &mut W, opts: &NetEncodeOpts) -> NetEncodeResult<()> {
+        if matches!(opts, NetEncodeOpts::SizePrefixed)
+        {
+            let len: VarInt = VarInt::new(self.len() as i32);
+            len.encode(writer, opts)?;
+        }
+
+        for item in self {
+            item.encode(writer, opts)?;
+        }
+        Ok(())
+    }
+
+    async fn encode_async<W: AsyncWrite + Unpin>(&self, writer: &mut W, opts: &NetEncodeOpts) -> NetEncodeResult<()> {
+        if matches!(opts, NetEncodeOpts::SizePrefixed)
+        {
+            let len: VarInt = VarInt::new(self.len() as i32);
+            len.encode_async(writer, opts).await?;
+        }
+
+        for item in self {
+            item.encode_async(writer, opts).await?;
+        }
+        Ok(())
+    }
+}
+
+impl<T> NetEncode for HashSet<T>
+where
+    T: NetEncode,// + std::clone::Clone,
 {
     fn encode<W: Write>(&self, writer: &mut W, opts: &NetEncodeOpts) -> NetEncodeResult<()> {
         if matches!(opts, NetEncodeOpts::SizePrefixed)

@@ -5,6 +5,8 @@ use std::sync::Arc;
 use ferrumc_scheduler::Scheduler;
 use lazy_static::lazy_static;
 
+pub use ferrumc_config::statics::get_global_config;
+
 pub use ferrumc_net_codec::encode::{NetEncodeOpts, NetEncode};
 pub use ferrumc_net_codec::decode::{NetDecodeOpts, NetDecode};
 pub use ferrumc_net::utils::ecs_helpers::EntityExt;

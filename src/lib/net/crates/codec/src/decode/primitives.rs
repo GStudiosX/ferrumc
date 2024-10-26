@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use crate::decode::{NetDecode, NetDecodeOpts, NetDecodeResult};
 use crate::net_types::var_int::VarInt;
@@ -81,6 +81,36 @@ where
         let mut vec = Vec::new();
         while cursor.position() < cursor.get_ref().len() as u64 {
             vec.push(T::decode(&mut cursor, opts)?);
+        }
+
+        Ok(vec)
+    }
+}
+
+impl<T> NetDecode for HashSet<T>
+where
+    T: NetDecode + Eq + Hash,
+{
+    fn decode<R: Read>(reader: &mut R, opts: &NetDecodeOpts) -> NetDecodeResult<Self> {
+        if matches!(opts, NetDecodeOpts::IsSizePrefixed)
+        {
+            let len = <VarInt as NetDecode>::decode(reader, opts)?.val as usize;
+            let mut vec = HashSet::with_capacity(len);
+            for _ in 0..len {
+                vec.insert(T::decode(reader, opts)?);
+            }
+            return Ok(vec);
+        }
+
+        // read to end
+        let mut data = Vec::new();
+        R::read_to_end(reader, &mut data)?;
+
+        let mut cursor = std::io::Cursor::new(data);
+
+        let mut vec = HashSet::new();
+        while cursor.position() < cursor.get_ref().len() as u64 {
+            vec.insert(T::decode(&mut cursor, opts)?);
         }
 
         Ok(vec)

@@ -2,7 +2,6 @@ use crate::components::ComponentManager;
 use crate::components::storage::{Component, ComponentRef, ComponentRefMut};
 use crate::entities::{Entity, EntityBuilder, EntityManager};
 use crate::query::{Query, QueryItem};
-use std::any::type_name;
 
 pub mod errors;
 
