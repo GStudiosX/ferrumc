@@ -28,14 +28,14 @@ impl ComponentBuilder {
 
 #[derive(Default)]
 pub struct TextComponentBuilder {
-    text: String,
-    color: Option<Color>,
-    bold: Option<bool>,
-    italic: Option<bool>,
-    underlined: Option<bool>,
-    strikethrough: Option<bool>,
-    obfuscated: Option<bool>,
-    extra: Vec<TextComponent>,
+    pub(crate) text: String,
+    pub(crate) color: Option<Color>,
+    pub(crate) bold: Option<bool>,
+    pub(crate) italic: Option<bool>,
+    pub(crate) underlined: Option<bool>,
+    pub(crate) strikethrough: Option<bool>,
+    pub(crate) obfuscated: Option<bool>,
+    pub(crate) extra: Vec<TextComponent>,
 }
 
 impl TextComponentBuilder {

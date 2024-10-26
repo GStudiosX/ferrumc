@@ -6,6 +6,7 @@ use std::io::Write;
 use std::marker::Unpin;
 use tokio::io::AsyncWriteExt;
 use std::fmt;
+use std::ops::Add;
 
 impl From<String> for TextComponent {
     fn from(value: String) -> Self {
@@ -26,6 +27,30 @@ impl From<&str> for TextComponent {
             },
             ..Default::default()
         }
+    }
+}
+
+impl<T> Add<T> for TextComponent
+where
+    T: Into<TextComponent>,
+{
+    type Output = Self;
+
+    fn add(mut self, other: T) -> Self {
+        self.extra.push(other.into());
+        self
+    }
+}
+
+impl<T> Add<T> for TextComponentBuilder
+where
+    T: Into<TextComponent>,
+{
+    type Output = Self;
+
+    fn add(mut self, other: T) -> Self {
+        self.extra.push(other.into());
+        self
     }
 }
 

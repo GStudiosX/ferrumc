@@ -41,6 +41,7 @@ async fn handle_login_start(
     
     match RwEvent::<PlayerStartLoginEvent>::trigger(event.clone(), Arc::clone(&state)).await {
         Err(NetError::Kick(msg)) => Err(NetError::Kick(msg)),
+        Err(NetError::EventsError(_)) => { Ok(login_start_event) },
         _ => {
             if let Some(event) = event.into_inner() {
                 ferrumc::internal::send_login_success(

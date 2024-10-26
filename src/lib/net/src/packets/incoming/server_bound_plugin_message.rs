@@ -9,9 +9,13 @@ use crate::{NetResult, ServerState};
 use std::fmt::Debug;
 use ferrumc_events::infrastructure::Event;
 
+/// This event triggers when a [LoginPluginResponse] is received.
+///
 #[derive(Event, Debug)]
 pub struct LoginPluginResponseEvent {
+    /// The entity that the event was triggered for
     pub entity: usize,
+    /// The [LoginPluginResponse] packet received.
     pub packet: LoginPluginResponse,
 }
 

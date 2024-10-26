@@ -36,7 +36,7 @@ pub struct EventListener<E: Event> {
 }
 
 impl<E: Event> EventListener<E> {
-    /// Trampoline function to convert from Box<Self> to Box<dyn ...>
+    /// Trampoline function to convert from `Box<Self>` to `Box<dyn ...>`
     pub fn to_dyn(self: Box<Self>) -> Box<dyn Any + Send + Sync> {
         self
     }

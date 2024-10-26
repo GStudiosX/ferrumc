@@ -40,18 +40,53 @@ impl ConnectionState {
     }
 }
 
+/// The GameProfile holds information about a player.
+///
+/// Fields:
+/// `uuid`: The uuid of the GameProfile.
+/// `username`: The username of the GameProfile.
+/// `properties`: The properties of the GameProfile for example textures.
+///
+/// ```ignore
+/// GameProfile {
+///     uuid: Uuid::new_v4().as_u128(),
+///     username: String::from("Name"),
+///     properties: vec![ProfileProperty {
+///         name: String::from("textures"),
+///         value: String::from("ewogICJ0aW1lc3RhbXAiIDog..."),
+///         is_signed: false,
+///         signature: None,
+///     }],
+/// }
+/// ```
+///
 #[derive(Debug, Clone, NetEncode, NetDecode)]
 pub struct GameProfile {
+    /// The uuid of this GameProfile
     pub uuid: u128,
+    /// The username of this GameProfile
     pub username: String,
+    /// The properties of this GameProfile
     pub properties: LengthPrefixedVec<ProfileProperty>
 }
 
+/// A property of a GameProfile.
+///
+/// Fields:
+/// `name`: The name of the Property.
+/// `value`: The value of the Property.
+/// `is_signed`: If the Property is signed.
+/// `signature`: The signature of the Property
+///
 #[derive(Debug, Clone, NetEncode)]
 pub struct ProfileProperty {
+    /// The name of this Property.
     pub name: String,
+    /// The value of this Property.
     pub value: String,
-    pub is_signed: bool,
+    /// If this Property is signed.
+    pub is_signed: bool, // note: perhaps this field can be removed with custom NetEncode implementation.
+    /// The signature of this Property.
     pub signature: Option<String>,
 }
 
@@ -73,6 +108,7 @@ impl NetDecode for ProfileProperty {
 }
 
 impl GameProfile {
+    /// Create a new GameProfile from uuid and username.
     pub fn new(uuid: u128, username: String) -> Self {
         Self {
             uuid,
@@ -130,6 +166,7 @@ impl StreamWriter {
     }
 }
 
+#[derive(Clone)]
 pub struct Profile {
     pub profile: Option<GameProfile>,
 }
@@ -164,12 +201,14 @@ impl Default for CompressionStatus {
     }
 }
 
+/// This is called when the player gets disconnected either by the server, player leaving or invalid packets and other errors.
+///
 #[derive(Event)]
-pub struct ClientDisconnectEvent {
+pub struct PlayerDisconnectEvent {
     entity: Entity,
 }
 
-impl ClientDisconnectEvent {
+impl PlayerDisconnectEvent {
     pub fn entity(&self) -> Entity {
         self.entity
     }
@@ -233,9 +272,9 @@ pub async fn handle_connection(state: Arc<ServerState>, tcp_stream: TcpStream) -
 
     debug!("Connection closed for entity: {:?}", entity);
 
-    match ClientDisconnectEvent::trigger(ClientDisconnectEvent { entity }, Arc::clone(&state)).await {
+    match PlayerDisconnectEvent::trigger(PlayerDisconnectEvent { entity }, Arc::clone(&state)).await {
         Ok(_) => {}
-        Err(e) => error!("Error calling client disconnect event: {}", e)
+        Err(e) => error!("Error calling player disconnect event: {}", e)
     }
 
     // Remove all components from the entity

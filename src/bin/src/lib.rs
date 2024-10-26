@@ -19,7 +19,11 @@ pub mod macros {
 }
 
 pub mod text {
-    pub use ferrumc_text::{*, color::*};
+    pub use ferrumc_text::{
+        ComponentBuilder, TextComponentBuilder, TextComponent,
+        JsonTextComponent,
+        color::*
+    };
 }
 
 /// Event API
