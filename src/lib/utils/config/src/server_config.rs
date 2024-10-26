@@ -17,8 +17,6 @@ use serde_derive::{Deserialize, Serialize};
 /// - `database` - [DatabaseConfig]: The configuration for the database.
 /// - `world`: The name of the world that the server will load.
 /// - `network_compression_threshold`: The threshold at which the server will compress network packets.
-/// - `enabled`: If velocity support should be enabled.
-/// - `secret`: The velocity secret used for modern forwarding.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ServerConfig {
     pub host: String,
