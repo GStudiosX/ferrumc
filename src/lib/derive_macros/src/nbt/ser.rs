@@ -62,7 +62,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
                 if flatten {
                     return quote! {
-                        <#ty as ::ferrumc_nbt::NBTSerializable>::serialize(&self.#ident, writer, &::ferrumc_nbt::NBTSerializeOptions::None);
+                        <#ty as ::ferrumc_nbt::NBTSerializable>::serialize(&self.#ident, writer, &::ferrumc_nbt::NBTSerializeOptions::Flatten);
                     };
                 }
 
@@ -178,13 +178,14 @@ pub fn derive(input: TokenStream) -> TokenStream {
                         <u8 as ::ferrumc_nbt::NBTSerializable>::serialize(&Self::id(), writer, &::ferrumc_nbt::NBTSerializeOptions::None);
                     }
                     ::ferrumc_nbt::NBTSerializeOptions::None => {}
+                    ::ferrumc_nbt::NBTSerializeOptions::Flatten => {}
                 }
 
                 #serialize_impl
 
-                //if options != &::ferrumc_nbt::NBTSerializeOptions::None {
+                if options != &::ferrumc_nbt::NBTSerializeOptions::Flatten {
                     <u8 as ::ferrumc_nbt::NBTSerializable>::serialize(&0u8, writer, &::ferrumc_nbt::NBTSerializeOptions::None);
-                //}
+                }
             }
 
             fn id() -> u8 {

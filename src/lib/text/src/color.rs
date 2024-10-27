@@ -72,7 +72,7 @@ impl NBTSerializable for Color {
             NBTSerializeOptions::WithHeader(tag_name) => {
                 NBTSerializable::serialize(tag_name, buf, &NBTSerializeOptions::Network);
             }
-            NBTSerializeOptions::Network => {}
+            NBTSerializeOptions::Network | NBTSerializeOptions::Flatten => {}
         }
 
         match self {

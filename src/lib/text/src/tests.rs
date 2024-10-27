@@ -54,9 +54,10 @@ struct TestPacket {
 
 #[tokio::test]
 async fn test_serialize_to_nbt() {
-    let component = TextComponentBuilder::new("test")
-        .color(NamedColor::Blue)
-        .build();
+    let component = ComponentBuilder::translate("chat.type.text", vec![
+            ComponentBuilder::text("GStudiosX").build(),
+            ComponentBuilder::text("Hi").build(),
+        ]);
     //println!("{:#?}", component.color);
     println!("{}", component.to_string());
     println!("{}", bytes_to_readable_string(&component.serialize_nbt()[..]));

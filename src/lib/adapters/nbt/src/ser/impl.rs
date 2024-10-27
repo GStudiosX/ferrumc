@@ -269,7 +269,7 @@ fn write_header<T: NBTSerializable>(buf: &mut Vec<u8>, opts: &NBTSerializeOption
             T::id().serialize(buf, &NBTSerializeOptions::None);
             tag_name.serialize(buf, &NBTSerializeOptions::None);
         }
-        NBTSerializeOptions::Network => {
+        NBTSerializeOptions::Network | NBTSerializeOptions::Flatten => {
             T::id().serialize(buf, &NBTSerializeOptions::None);
         }
     }

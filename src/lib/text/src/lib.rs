@@ -19,10 +19,10 @@ pub type JsonTextComponent = String;
 
 /// A TextComponent that can be a Text, Translate or Keybind.
 ///
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, Default, NBTSerialize)]
 pub struct TextComponent {
     #[serde(flatten)]
-    //#[nbt(flatten)]
+    #[nbt(flatten)]
     /// The content field of this TextComponent.
     ///
     /// ```ignore
@@ -61,7 +61,7 @@ pub struct TextComponent {
     pub obfuscated: Option<bool>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    //#[nbt(skip_if = "Vec::is_empty")]
+    #[nbt(skip_if = "Vec::is_empty")]
     /// The with field of this TextComponent.
     pub extra: Vec<TextComponent>,
 }
