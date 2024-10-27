@@ -15,8 +15,6 @@ pub enum Color {
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
 #[serde(rename_all(serialize = "snake_case"))]
 pub enum NamedColor {
-    #[default]
-    Reset,
     Black,
     DarkBlue,
     DarkGreen,
@@ -32,13 +30,13 @@ pub enum NamedColor {
     Red,
     LightPurple,
     Yellow,
+    #[default]
     White,
 }
 
 impl fmt::Display for NamedColor {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", match self {
-            Self::Reset => "reset",
             Self::Black => "black",
             Self::DarkBlue => "dark_blue",
             Self::DarkGreen => "dark_green",

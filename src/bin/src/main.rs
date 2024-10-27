@@ -40,11 +40,10 @@ async fn test_join(
         .get::<PlayerIdentity>(Arc::clone(&state))?;
 
     writer.send_packet(&SystemChatMessage {
-        message: (ComponentBuilder::text(&profile.username)
-            .extra(ComponentBuilder::text(": "))
-            .extra(ComponentBuilder::text(&event.message.message)
-                .color(NamedColor::Blue)))
-                .build(),
+        message: ComponentBuilder::translate("chat.type.text", vec![
+            ComponentBuilder::text(&profile.username).build(),
+            ComponentBuilder::text(&event.message.message).build(),
+        ]),
         overlay: false,
     }, &NetEncodeOpts::WithLength).await?;
 
