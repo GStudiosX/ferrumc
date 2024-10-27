@@ -25,10 +25,9 @@ impl System for TcpListenerSystem {
         debug!("Stopping TCP listener system...");
         self.shutdown.store(true, Ordering::Relaxed);
 
-        // TODO: probably should parallelize if there is many players
         futures::stream::iter(state.universe.query::<(&mut StreamWriter, &ConnectionState)>())
-            .for_each(|(mut writer, conn_state)| async move {
-                writer.kick(&conn_state, "Server Closed").await;
+            .for_each_concurrent(None, |(mut writer, conn_state)| async move {
+                let _ = writer.kick(&conn_state, "Server Closed").await;
             })
             .await;
     }
