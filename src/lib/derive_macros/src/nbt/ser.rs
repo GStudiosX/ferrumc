@@ -176,16 +176,15 @@ pub fn derive(input: TokenStream) -> TokenStream {
                     }
                     ::ferrumc_nbt::NBTSerializeOptions::Network => {
                         <u8 as ::ferrumc_nbt::NBTSerializable>::serialize(&Self::id(), writer, &::ferrumc_nbt::NBTSerializeOptions::None);
-                        <u16 as ::ferrumc_nbt::NBTSerializable>::serialize(&0u16, writer, &::ferrumc_nbt::NBTSerializeOptions::None);                        
                     }
                     ::ferrumc_nbt::NBTSerializeOptions::None => {}
                 }
 
                 #serialize_impl
 
-                if options != &::ferrumc_nbt::NBTSerializeOptions::None {
+                //if options != &::ferrumc_nbt::NBTSerializeOptions::None {
                     <u8 as ::ferrumc_nbt::NBTSerializable>::serialize(&0u8, writer, &::ferrumc_nbt::NBTSerializeOptions::None);
-                }
+                //}
             }
 
             fn id() -> u8 {

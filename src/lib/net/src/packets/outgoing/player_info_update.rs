@@ -6,18 +6,18 @@ use ferrumc_net_codec::net_types::{
 use crate::connection::{GameProfile, ProfileProperty};
 use bitmask_enum::bitmask;
 use std::io::Write;
-use std::collections::HashSet;
-use std::hash::{Hash, Hasher};
+//use std::collections::HashSet;
+//use std::hash::{Hash, Hasher};
 
 #[bitmask(u8)]
 #[derive(NetEncode)]
 pub enum PlayerActions {
-    AddPlayer = 1,
-    InitializeChat = 2,
-    UpdateGameMode = 4,
-    UpdateListed = 8,
-    UpdateLatency = 10,
-    UpdateDisplayName = 20,
+    AddPlayer = 0x01,
+    InitializeChat = 0x02,
+    UpdateGameMode = 0x04,
+    UpdateListed = 0x08,
+    UpdateLatency = 0x10,
+    UpdateDisplayName = 0x20,
 }
 
 #[derive(NetEncode, Debug)]
@@ -47,7 +47,7 @@ impl PlayerInfoUpdatePacket {
 
     pub fn get_player_actions(player_infos: &Vec<PlayerInfo>) -> Result<PlayerActions, String> {
         if !Self::is_valid(player_infos) {
-            Err("The player_infos provided is invalid.".to_string())
+            Err("The player infos provided is invalid.".to_string())
         } else {
             let first = &player_infos[0].actions;
             let mut flags = PlayerActions::none();
@@ -57,9 +57,9 @@ impl PlayerInfoUpdatePacket {
                 flags = flags | match action {
                     PlayerAction::AddPlayer { .. } => PlayerActions::AddPlayer,
                     PlayerAction::InitializeChat { .. } => PlayerActions::InitializeChat,
-                    PlayerAction::UpdateGameMode(..) => PlayerActions::UpdateGameMode,
-                    PlayerAction::UpdateListed(..) => PlayerActions::UpdateListed,
-                    PlayerAction::UpdateLatency(..) => PlayerActions::UpdateLatency,
+                    PlayerAction::UpdateGameMode { .. } => PlayerActions::UpdateGameMode,
+                    PlayerAction::UpdateListed { .. } => PlayerActions::UpdateListed,
+                    PlayerAction::UpdateLatency { .. } => PlayerActions::UpdateLatency,
                     PlayerAction::UpdateDisplayName { .. } => PlayerActions::UpdateDisplayName,
                 };
             }
@@ -72,7 +72,20 @@ impl PlayerInfoUpdatePacket {
 #[derive(NetEncode, Debug)]
 pub struct PlayerInfo {
     pub uuid: u128,
-    pub actions: HashSet<PlayerAction>,
+    // note: Not sure if this should be HashSet
+    pub actions: Vec<PlayerAction>,
+}
+
+impl PlayerInfo {
+    pub fn from(profile: &GameProfile) -> Self {
+        Self {
+            uuid: profile.uuid,
+            actions: vec![
+                PlayerAction::add_player(profile),
+                PlayerAction::UpdateListed { listed: true }
+            ],
+        }
+    }
 }
 
 #[derive(NetEncode, Debug, Eq, Clone)]
@@ -83,9 +96,15 @@ pub enum PlayerAction {
     },
     InitializeChat { // TODO
     },
-    UpdateGameMode(VarInt),
-    UpdateListed(bool),
-    UpdateLatency(VarInt),
+    UpdateGameMode {
+        gamemode: VarInt,
+    },
+    UpdateListed {
+        listed: bool,
+    },
+    UpdateLatency {
+        latency: VarInt,
+    },
     UpdateDisplayName { // TODO
     },
 }
@@ -105,8 +124,8 @@ impl PartialEq for PlayerAction {
     }
 }
 
-impl Hash for PlayerAction {
+/*impl Hash for PlayerAction {
     fn hash<H: Hasher>(&self, state: &mut H) {
         std::mem::discriminant(self).hash(state);
     }
-}
+}*/

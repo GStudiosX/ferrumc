@@ -20,7 +20,7 @@ use ferrumc_net::packets::outgoing::synchronize_player_position::SynchronizePlay
 use ferrumc_net::packets::outgoing::finish_configuration::FinishConfigurationPacket;
 use ferrumc_net::packets::outgoing::player_info_update::{PlayerInfoUpdatePacket, PlayerInfo, PlayerAction};
 use std::sync::Arc;
-use std::collections::HashSet;
+//use std::collections::HashSet;
 
 #[event_handler]
 async fn handle_login_start(
@@ -133,13 +133,7 @@ async fn handle_ack_finish_configuration(
         .get::<Profile>(ack_finish_configuration_event.conn_id)?
         .profile {
         if let Ok(info_update) = PlayerInfoUpdatePacket::new(vec![
-            PlayerInfo {
-                uuid: profile.uuid,
-                actions: HashSet::from([
-                    PlayerAction::add_player(profile),
-                    PlayerAction::UpdateListed(true)
-                ])
-            }
+            PlayerInfo::from(profile),
         ]) {
             writer.send_packet(&info_update, &NetEncodeOpts::WithLength).await?;
         } else {
