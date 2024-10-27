@@ -18,7 +18,7 @@ mod velocity;
 pub type Result<T> = std::result::Result<T, errors::BinaryError>;
 
 // test
-use ferrumc::{macros::{NetEncode, packet}, events::{PlayerJoinGameEvent, GlobalState, event_handler}, text::*, Profile, NetEncodeOpts, StreamWriter, EntityExt, NetResult, ServerState, get_scheduler, get_global_config};
+use ferrumc::{macros::{NetEncode, packet}, events::{PlayerAsyncChatEvent, GlobalState, event_handler}, text::*, PlayerIdentity, NetEncodeOpts, StreamWriter, EntityExt, NetResult, ServerState, get_scheduler, get_global_config};
 use std::io::Write;
 
 #[derive(NetEncode)]
@@ -30,29 +30,23 @@ struct SystemChatMessage {
 
 #[event_handler]
 async fn test_join(
-    event: PlayerJoinGameEvent,
-    _state: GlobalState,
-) -> NetResult<PlayerJoinGameEvent> {
+    event: PlayerAsyncChatEvent,
+    state: GlobalState,
+) -> NetResult<PlayerAsyncChatEvent> {
     let entity = event.entity.clone();
-    get_scheduler().schedule_task(move |state| async move {
-        let mut writer = entity
-            .get_mut::<StreamWriter>(Arc::clone(&state))?;
-        let profile = entity
-            .get::<Profile>(Arc::clone(&state))?
-            .clone();
+    let mut writer = entity
+        .get_mut::<StreamWriter>(Arc::clone(&state))?;
+    let profile = entity
+        .get::<PlayerIdentity>(Arc::clone(&state))?;
 
-        writer.send_packet(&SystemChatMessage {
-            message: (ComponentBuilder::text("[") 
-                + ComponentBuilder::text(profile.profile.unwrap().username) 
-                + ComponentBuilder::text("] ") 
-                + ComponentBuilder::text("Hello, World!")
-                    .color(NamedColor::Blue))
-                    .build(),
-            overlay: false,
-        }, &NetEncodeOpts::WithLength).await?;
-
-        Ok(())
-    }, std::time::Duration::from_secs(5), None).await;
+    writer.send_packet(&SystemChatMessage {
+        message: (ComponentBuilder::text(&profile.username)
+            .extra(ComponentBuilder::text(": "))
+            .extra(ComponentBuilder::text(&event.message.message)
+                .color(NamedColor::Blue)))
+                .build(),
+        overlay: false,
+    }, &NetEncodeOpts::WithLength).await?;
 
     Ok(event)
 }

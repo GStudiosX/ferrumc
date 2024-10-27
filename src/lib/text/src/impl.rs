@@ -139,7 +139,13 @@ impl NBTSerializable for TextComponent {
                 NBTSerializable::serialize(&"translatable", buf, &NBTSerializeOptions::WithHeader("type"));
                 NBTSerializable::serialize(translate, buf, &NBTSerializeOptions::WithHeader("translate"));
                 if !with.is_empty() {
-                    NBTSerializable::serialize(with, buf, &NBTSerializeOptions::WithHeader("with"));
+                    NBTSerializable::serialize(&9u8, buf, &NBTSerializeOptions::None);
+                    NBTSerializable::serialize(&"with", buf, &NBTSerializeOptions::None);
+                    NBTSerializable::serialize(&Self::id(), buf, &NBTSerializeOptions::None);
+                    NBTSerializable::serialize(&(with.len() as i32), buf, &NBTSerializeOptions::None);
+                    for elem in with {
+                        NBTSerializable::serialize(elem, buf, &NBTSerializeOptions::None);
+                    }
                 }
             }
         }

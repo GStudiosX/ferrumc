@@ -12,6 +12,7 @@ pub use ferrumc_events::{
 pub use ferrumc_net::connection::PlayerDisconnectEvent;
 
 pub use ferrumc_net::packets::incoming::server_bound_plugin_message::LoginPluginResponseEvent;
+pub use ferrumc_net::packets::incoming::chat_message::PlayerAsyncChatEvent;
 
 use std::sync::{Arc, RwLock};
 
