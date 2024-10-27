@@ -9,41 +9,26 @@ use tokio::io::AsyncWriteExt;
 use std::fmt;
 use std::ops::Add;
 use std::str::FromStr;
-use std::ops::{Deref, DerefMut};
-
-impl Deref for TextComponent {
-    type Target = TextInner;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for TextComponent {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
 
 impl From<String> for TextComponent {
     fn from(value: String) -> Self {
-        Self(TextInner {
+        Self {
             content: TextContent::Text {
                 text: value,
             },
             ..Default::default()
-        })
+        }
     }
 }
 
 impl From<&str> for TextComponent {
     fn from(value: &str) -> Self {
-        Self(TextInner {
+        Self {
             content: TextContent::Text {
                 text: value.into(),
             },
             ..Default::default()
-        })
+        }
     }
 }
 
@@ -126,7 +111,7 @@ impl NBTSerializable for TextComponent {
             NBTSerializable::serialize(&Self::id(), buf, &NBTSerializeOptions::None);
         }
 
-        match &self.0.content {
+        match &self.content {
             TextContent::Text { text } => {
                 NBTSerializable::serialize(&"text", buf, &NBTSerializeOptions::WithHeader("type"));
                 NBTSerializable::serialize(text, buf, &NBTSerializeOptions::WithHeader("text"));
@@ -150,39 +135,39 @@ impl NBTSerializable for TextComponent {
             }
         }
 
-        /*
-        pub color: Option<Color>,
-        pub bold: Option<bool>,
-        pub italic: Option<bool>,
-        pub underlined: Option<bool>,
-        pub strikethrough: Option<bool>,
-        pub obfuscated: Option<bool>,
-        */
-        if let Some(ref val) = self.0.color {
+        
+        // pub color: Option<Color>,
+        // pub bold: Option<bool>,
+        // pub italic: Option<bool>,
+        // pub underlined: Option<bool>,
+        // pub strikethrough: Option<bool>,
+        // pub obfuscated: Option<bool>,
+        
+        if let Some(ref val) = self.color {
             NBTSerializable::serialize(val, buf, &NBTSerializeOptions::WithHeader("color"));
         }
-        if let Some(ref val) = self.0.bold {
+        if let Some(ref val) = self.bold {
             NBTSerializable::serialize(val, buf, &NBTSerializeOptions::WithHeader("bold"));
         }
-        if let Some(ref val) = self.0.italic {
+        if let Some(ref val) = self.italic {
             NBTSerializable::serialize(val, buf, &NBTSerializeOptions::WithHeader("italic"));
         }
-        if let Some(ref val) = self.0.underlined {
+        if let Some(ref val) = self.underlined {
             NBTSerializable::serialize(val, buf, &NBTSerializeOptions::WithHeader("underlined"));
         }
-        if let Some(ref val) = self.0.strikethrough {
+        if let Some(ref val) = self.strikethrough {
             NBTSerializable::serialize(val, buf, &NBTSerializeOptions::WithHeader("strikethrough"));
         }
-        if let Some(ref val) = self.0.obfuscated {
+        if let Some(ref val) = self.obfuscated {
             NBTSerializable::serialize(val, buf, &NBTSerializeOptions::WithHeader("obfuscated"));
         }
 
-        if !self.0.extra.is_empty() {
+        if !self.extra.is_empty() {
             NBTSerializable::serialize(&9u8, buf, &NBTSerializeOptions::None);
             NBTSerializable::serialize(&"extra", buf, &NBTSerializeOptions::None);
             NBTSerializable::serialize(&Self::id(), buf, &NBTSerializeOptions::None);
-            NBTSerializable::serialize(&(self.0.extra.len() as i32), buf, &NBTSerializeOptions::None);
-            for elem in &self.0.extra {
+            NBTSerializable::serialize(&(self.extra.len() as i32), buf, &NBTSerializeOptions::None);
+            for elem in &self.extra {
                 NBTSerializable::serialize(elem, buf, &NBTSerializeOptions::None);
             }
         }

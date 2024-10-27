@@ -1,14 +1,14 @@
-//use ferrumc_macros::NBTSerialize;
+use ferrumc_macros::NBTSerialize;
 use serde::{Serialize, Deserialize};
 use ferrumc_nbt::NBTSerializable;
 use ferrumc_nbt::NBTSerializeOptions;
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+// TODO: better api for custom colors
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, NBTSerialize)]
 #[serde(untagged)]
 pub enum Color {
     Named(NamedColor),
-    // TODO: colors by rgb instead of manual hex
     Hex(String),
 }
 
@@ -67,6 +67,7 @@ impl NBTSerializable for NamedColor {
     fn id() -> u8 { 8 }
 }
 
+/*
 impl NBTSerializable for Color {
     fn serialize(&self, buf: &mut Vec<u8>, opts: &NBTSerializeOptions<'_>) {
         match opts {
@@ -86,7 +87,7 @@ impl NBTSerializable for Color {
     }
 
     fn id() -> u8 { 0 }
-}
+}*/
 
 impl From<NamedColor> for Color {
     fn from(value: NamedColor) -> Color {

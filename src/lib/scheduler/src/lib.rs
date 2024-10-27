@@ -178,6 +178,7 @@ impl Scheduler {
                                 error!("Error in scheduled task: {}", e);
                             }
 
+                            // probably should really do something else than rescheduling the task
                             if let Some(delay) = task.interval {
                                 //trace!("Rescheduling interval task");
                                 let scheduled_task = ScheduledTask::new(

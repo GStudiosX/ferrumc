@@ -133,7 +133,7 @@ impl<T: NBTSerializable> NBTSerializable for &'_ [T] {
             }
         } else {
             self.iter()
-                .for_each(|item| item.serialize(buf, &NBTSerializeOptions::Network));
+                .for_each(|item| item.serialize(buf, &NBTSerializeOptions::None));
         }
     }
 

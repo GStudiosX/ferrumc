@@ -37,7 +37,7 @@ pub struct ChatMessagePacket {
     pub salt: i64,
     pub signature: Signature,
     pub message_count: VarInt,
-    pub acknowledged: [u8; 2], // ceil(20 / 8)
+    pub acknowledged: [u8; 3], // ceil(20 / 8)
 }
 
 impl IncomingPacket for ChatMessagePacket {

@@ -14,23 +14,23 @@ impl ComponentBuilder {
 
     #[inline]
     pub fn keybind<S: Into<String>>(keybind: S) -> TextComponent {
-        TextComponent(TextInner {
+        TextComponent {
             content: TextContent::Keybind {
                 keybind: keybind.into()
             },
             ..Default::default()
-        })
+        }
     }
 
     #[inline]
     pub fn translate<S: Into<String>>(translate: S, with: Vec<TextComponent>) -> TextComponent {
-        TextComponent(TextInner {
+        TextComponent {
             content: TextContent::Translate {
                 translate: translate.into(),
                 with,
             },
             ..Default::default()
-        })
+        }
     }
 
     #[inline]
@@ -90,7 +90,7 @@ impl TextComponentBuilder {
     }
 
     pub fn build(self) -> TextComponent {
-        TextComponent(TextInner {
+        TextComponent {
             content: TextContent::Text {
                 text: self.text,
             },
@@ -101,7 +101,7 @@ impl TextComponentBuilder {
             strikethrough: self.strikethrough,
             obfuscated: self.obfuscated,
             extra: self.extra
-        })
+        }
     }
 }
 

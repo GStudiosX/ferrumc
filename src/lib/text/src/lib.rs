@@ -14,15 +14,15 @@ use color::Color;
 
 pub type JsonTextComponent = String;
 
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, Default)]
-pub struct TextComponent(TextInner);
+//#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, Default, NBTSerialize)]
+//pub struct TextComponent(TextInner);
 
-/// A TextInner that can be a Text, Translate or Keybind.
+/// A TextComponent that can be a Text, Translate or Keybind.
 ///
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, Default, NBTSerialize)]
-pub struct TextInner {
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, Default)]
+pub struct TextComponent {
     #[serde(flatten)]
-    #[nbt(flatten)]
+    //#[nbt(flatten)]
     /// The content field of this TextComponent.
     ///
     /// ```ignore
@@ -61,7 +61,7 @@ pub struct TextInner {
     pub obfuscated: Option<bool>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    #[nbt(skip_if = "Vec::is_empty")]
+    //#[nbt(skip_if = "Vec::is_empty")]
     /// The with field of this TextComponent.
     pub extra: Vec<TextComponent>,
 }
