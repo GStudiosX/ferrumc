@@ -16,6 +16,7 @@ use std::io::Write;
 use std::io::Read;
 use crate::errors::NetError;
 use ferrumc_text::*;
+use crate::packets::outgoing::disconnect::*;
 
 #[derive(Clone, PartialEq)]
 #[repr(u8)]
@@ -154,11 +155,17 @@ impl StreamWriter {
         Ok(())
     }
 
-    pub async fn kick<S: Into<JsonTextComponent>>(&mut self, conn_state: &ConnectionState, reason: S) -> NetResult<()> {
-        let packet = if conn_state == &ConnectionState::Login {
-            crate::packets::outgoing::disconnect::LoginDisconnect::new(reason)
-        } else {
-            return Err(NetError::InvalidState(conn_state.clone() as u8));
+    pub async fn kick<S: Into<TextComponent>>(&mut self, conn_state: &ConnectionState, reason: S) -> NetResult<()> {
+        let packet = match conn_state {
+            ConnectionState::Login => {
+                DisconnectPacket::Login(LoginDisconnect::new(reason.into()))
+            }
+            ConnectionState::Play => {
+                DisconnectPacket::Play(PlayDisconnect::new(reason))
+            }
+            _ => {
+                return Err(NetError::InvalidState(conn_state.clone() as u8));
+            }
         };
 
         self.send_packet(&packet, &NetEncodeOpts::WithLength).await

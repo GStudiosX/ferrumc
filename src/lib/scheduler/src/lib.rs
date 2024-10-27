@@ -9,10 +9,10 @@ use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
 use tokio::sync::Mutex;
-use std::sync::Arc;
+use std::sync::{Arc, atomic::{AtomicBool, AtomicUsize, Ordering as AtomicOrdering}};
 use tokio::sync::Notify;
 use tokio::time::{sleep_until, Duration, Instant};
-use tracing::error;
+use tracing::{error, info};
 
 pub trait AsyncCallback = 'static
     + Send
@@ -56,7 +56,7 @@ impl ScheduledTask {
     }
 
     pub async fn run(&self, state: Arc<ServerState>) -> anyhow::Result<()> {
-        if self.cancel.is_cancelled().await {
+        if self.cancel.is_cancelled() {
             Err(CancelError.into())
         } else {
             (self.runnable)(state).await
@@ -85,20 +85,20 @@ impl Ord for ScheduledTask {
 }
 
 #[derive(Debug, Clone)]
-pub struct TaskCancel(Arc<Mutex<bool>>);
+pub struct TaskCancel(Arc<AtomicBool>);
 
 impl TaskCancel {
     pub fn new() -> Self {
-        Self(Arc::new(Mutex::new(false)))
+        Self(Arc::new(AtomicBool::new(false)))
     }
 
-    pub async fn cancel(&self) -> bool {
-        *self.0.lock().await = true;
+    pub fn cancel(&self) -> bool {
+        self.0.store(true, AtomicOrdering::Relaxed);
         true
     }
 
-    pub async fn is_cancelled(&self) -> bool {
-        *self.0.lock().await
+    pub fn is_cancelled(&self) -> bool {
+        self.0.load(AtomicOrdering::Relaxed)
     }
 }
 
@@ -111,6 +111,8 @@ impl Default for TaskCancel {
 pub struct Scheduler {
     task_queue: Arc<Mutex<BinaryHeap<ScheduledTask>>>,
     wake: Arc<Notify>,
+    shutdown: Arc<AtomicBool>,
+    active_tasks: Arc<AtomicUsize>,
 }
 
 impl Scheduler {
@@ -118,20 +120,27 @@ impl Scheduler {
         Self {
             task_queue: Arc::new(Mutex::new(BinaryHeap::new())),
             wake: Arc::new(Notify::new()),
+            shutdown: Arc::new(AtomicBool::new(false)),
+            active_tasks: Arc::new(AtomicUsize::new(0)),
         }
     }
 
     /// Schedules a async task
+    ///
     pub async fn schedule_task<F, Fut>(
         &self,
         cb: F,
         delay: Duration,
         interval: Option<Duration>,
-    ) -> TaskCancel
+    ) -> Result<TaskCancel, String>
     where
         F: Fn(Arc<ServerState>) -> Fut + Send + Sync + 'static + Clone,
         Fut: Future<Output = Result<()>> + Send + Sync,
     {
+        if self.shutdown.load(AtomicOrdering::Relaxed) {
+            return Err("the task scheduler has been shutdown".into());
+        }
+
         let cancel = TaskCancel::new();
         // Add scheduled task into the queue
         let scheduled_task = ScheduledTask::new(
@@ -150,7 +159,14 @@ impl Scheduler {
         // Wake up the scheduler
         self.wake.notify_one();
         //trace!("Task scheduled");
-        cancel
+        Ok(cancel)
+    }
+
+    /// Shutdown the scheduler this will wait 10 seconds for all active tasks to finish.
+    ///
+    pub fn shutdown(self: Arc<Self>) {
+        self.shutdown.store(true, AtomicOrdering::Relaxed);
+        self.wake.notify_one();
     }
 
     // this should be safe as I drop the queue mutex guard
@@ -159,8 +175,10 @@ impl Scheduler {
     // note: this may not be needed anymore since I use a await aware Mutex.
     // tokio::sync::Mutex
     #[allow(clippy::await_holding_lock)] 
+    /// Run the scheduler.
+    ///
     pub async fn run(self: Arc<Self>, state: Arc<ServerState>) {
-        loop {
+        while !self.shutdown.load(AtomicOrdering::Relaxed) {
             let mut queue = self.task_queue.lock().await;
             if let Some(task) = queue.peek() {
                 if task.period <= Instant::now() {
@@ -169,9 +187,11 @@ impl Scheduler {
                     drop(queue);
                     tokio::spawn({
                         let scheduler = Arc::clone(&self);
+                        scheduler.active_tasks.fetch_add(1, AtomicOrdering::Relaxed);
                         async move {
                             if let Err(e) = task.run(state).await {
                                 if e.is::<CancelError>() {
+                                    scheduler.active_tasks.fetch_sub(1, AtomicOrdering::Relaxed);
                                     //trace!("CancelError recieved");
                                     return;
                                 }
@@ -194,6 +214,8 @@ impl Scheduler {
                                 // Wake up the scheduler
                                 scheduler.wake.notify_one();
                             }
+
+                            scheduler.active_tasks.fetch_sub(1, AtomicOrdering::Relaxed);
                         }
                     });
                 } else {
@@ -209,6 +231,23 @@ impl Scheduler {
                 self.wake.notified().await;
             }
         }
+
+        if !self.wait_for_complete().await {
+            info!("Shutdown timeout reached; forcing shutdown.");
+        }
+    }
+
+    /// wait for active tasks to complete
+    ///
+    async fn wait_for_complete(self: Arc<Self>) -> bool {
+        let mut elapsed = 0;
+
+        while self.active_tasks.load(AtomicOrdering::Relaxed) > 0 && elapsed < 10 {
+            tokio::time::sleep(Duration::from_secs(1)).await;
+            elapsed += 1;
+        }
+
+        self.active_tasks.load(AtomicOrdering::Relaxed) == 0
     }
 }
 

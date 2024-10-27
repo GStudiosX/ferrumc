@@ -75,7 +75,10 @@ async fn entry() -> Result<()> {
     let all_systems = tokio::spawn(definition::start_all_systems(Arc::clone(&global_state)));
 
     // Start the systems and wait until all of them are done
-    all_systems.await??;
+    tokio::select! {
+        _ = all_systems => {}
+        _ = tokio::signal::ctrl_c() => {}
+    };
     
     // Stop all systems
     definition::stop_all_systems(global_state).await?;

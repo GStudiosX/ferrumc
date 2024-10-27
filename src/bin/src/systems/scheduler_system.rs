@@ -15,6 +15,7 @@ impl System for SchedulerSystem {
 
     async fn stop(self: Arc<Self>, _state: GlobalState) {
         debug!("Stopping Scheduler system...");
+        get_scheduler().shutdown();
     }
 
     fn name(&self) -> &'static str {
