@@ -19,8 +19,8 @@ use ferrumc_net::packets::outgoing::set_default_spawn_position::SetDefaultSpawnP
 use ferrumc_net::packets::outgoing::synchronize_player_position::SynchronizePlayerPositionPacket;
 use ferrumc_net::packets::outgoing::finish_configuration::FinishConfigurationPacket;
 use ferrumc_net::packets::outgoing::player_info_update::{PlayerInfoUpdatePacket, PlayerInfo};
+use ferrumc::events::EventsError;
 use std::sync::Arc;
-//use std::collections::HashSet;
 
 #[event_handler]
 async fn handle_login_start(
@@ -42,7 +42,7 @@ async fn handle_login_start(
     
     match RwEvent::<PlayerStartLoginEvent>::trigger(event.clone(), Arc::clone(&state)).await {
         Err(NetError::Kick(msg)) => Err(NetError::Kick(msg)),
-        Err(NetError::EventsError(_)) => { Ok(login_start_event) },
+        Err(NetError::EventsError(EventsError::Cancelled)) => { Ok(login_start_event) },
         _ => {
             if let Some(event) = event.into_inner() {
                 ferrumc::internal::send_login_success(

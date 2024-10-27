@@ -29,7 +29,7 @@ async fn handle_login_start(
         state.universe.add_component(ev.entity, VelocityMessageId(id))?;
 
         // this stops the packet handler from doing login success
-        Err(NetError::EventsError(EventsError::Other("cancel login success".to_string())))
+        Err(NetError::EventsError(EventsError::Cancelled))
     } else {
         Ok(event)
     }
