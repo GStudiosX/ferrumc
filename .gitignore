@@ -6,5 +6,6 @@
 Cargo.lock
 config.toml
 .temp
+./test
 
 book
