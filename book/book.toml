@@ -1,9 +1,0 @@
-[book]
-authors = ["SweattyPalms", "GStudiosX2","Contributors"]
-language = "en"
-multilingual = false
-src = "src"
-title = "FerrumC Book"
-
-[output.html]
-additional-css = ["./custom.css"]
