@@ -18,7 +18,7 @@ use ferrumc_net::packets::outgoing::client_bound_plugin_message::ConfigurationPl
 use ferrumc_net::packets::outgoing::set_default_spawn_position::SetDefaultSpawnPositionPacket;
 use ferrumc_net::packets::outgoing::synchronize_player_position::SynchronizePlayerPositionPacket;
 use ferrumc_net::packets::outgoing::finish_configuration::FinishConfigurationPacket;
-use ferrumc_net::packets::outgoing::player_info_update::{PlayerInfoUpdatePacket, PlayerInfo, PlayerAction};
+use ferrumc_net::packets::outgoing::player_info_update::{PlayerInfoUpdatePacket, PlayerInfo};
 use std::sync::Arc;
 //use std::collections::HashSet;
 

@@ -26,6 +26,7 @@ crab_nbt = {  version = "0.2.1" }
 hematite-nbt = {  version = "0.5.2" }
 fastanvil = { version = "0.31.0" }
 maplit = "1.0.2"
+serde = { workspace = true }
 
 [[bench]]
 name = "ferrumc-nbt"

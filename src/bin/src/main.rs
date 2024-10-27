@@ -18,7 +18,7 @@ mod velocity;
 pub type Result<T> = std::result::Result<T, errors::BinaryError>;
 
 // test
-use ferrumc::{macros::{NetEncode, packet}, events::{PlayerAsyncChatEvent, GlobalState, event_handler}, text::*, PlayerIdentity, NetEncodeOpts, StreamWriter, EntityExt, NetResult, ServerState, get_scheduler, get_global_config};
+use ferrumc::{macros::{NetEncode, packet}, events::{PlayerAsyncChatEvent, GlobalState, event_handler}, text::*, PlayerIdentity, NetEncodeOpts, StreamWriter, EntityExt, NetResult, ServerState, get_global_config};
 use std::io::Write;
 
 #[derive(NetEncode)]
@@ -33,7 +33,7 @@ async fn test_join(
     event: PlayerAsyncChatEvent,
     state: GlobalState,
 ) -> NetResult<PlayerAsyncChatEvent> {
-    let entity = event.entity.clone();
+    let entity = event.entity;
     let mut writer = entity
         .get_mut::<StreamWriter>(Arc::clone(&state))?;
     let profile = entity

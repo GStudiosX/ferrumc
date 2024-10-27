@@ -93,8 +93,8 @@ where
 {
     fn decode<R: Read>(reader: &mut R, opts: &NetDecodeOpts) -> NetDecodeResult<Self> {
         let mut arr = vec![T::default(); N];
-        for i in 0..N {
-            arr[i] = T::decode(reader, opts)?;
+        for elem in arr.iter_mut().take(N) {
+            *elem = T::decode(reader, opts)?;
         }
         Ok(arr.try_into().unwrap())
     }

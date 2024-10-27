@@ -36,16 +36,12 @@ impl PlayerInfoUpdatePacket {
         })
     }
 
-    pub fn is_valid(player_infos: &Vec<PlayerInfo>) -> bool {
+    pub fn is_valid(player_infos: &[PlayerInfo]) -> bool {
         let first = &player_infos[0].actions;
-        if player_infos.iter().all(|info| &info.actions == first) {
-            true
-        } else {
-            false
-        }
+        player_infos.iter().all(|info| &info.actions == first)
     }
 
-    pub fn get_player_actions(player_infos: &Vec<PlayerInfo>) -> Result<PlayerActions, String> {
+    pub fn get_player_actions(player_infos: &[PlayerInfo]) -> Result<PlayerActions, String> { 
         if !Self::is_valid(player_infos) {
             Err("The player infos provided is invalid.".to_string())
         } else {
@@ -54,7 +50,7 @@ impl PlayerInfoUpdatePacket {
 
             for action in first.iter() {
                 // for each action apply flag
-                flags = flags | match action {
+                flags |= match action {
                     PlayerAction::AddPlayer { .. } => PlayerActions::AddPlayer,
                     PlayerAction::InitializeChat { .. } => PlayerActions::InitializeChat,
                     PlayerAction::UpdateGameMode { .. } => PlayerActions::UpdateGameMode,

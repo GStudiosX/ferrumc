@@ -145,6 +145,19 @@ impl NetEncode for &[u8] {
     }
 }
 
+impl<T, const N: usize> NetEncode for [T; N]
+where
+    T: NetEncode + Clone,
+{
+    fn encode<W: Write>(&self, writer: &mut W, opts: &NetEncodeOpts) -> NetEncodeResult<()> {
+        Vec::from(self).encode(writer, opts)
+    }
+
+    async fn encode_async<W: AsyncWrite + Unpin>(&self, writer: &mut W, opts: &NetEncodeOpts) -> NetEncodeResult<()> {
+        Vec::from(self).encode_async(writer, opts).await
+    }
+}
+
 impl NetEncode for &[&str] {
     fn encode<W: Write>(&self, writer: &mut W, opts: &NetEncodeOpts) -> NetEncodeResult<()> {
         if matches!(opts, NetEncodeOpts::SizePrefixed)

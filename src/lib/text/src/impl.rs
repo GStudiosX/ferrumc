@@ -83,9 +83,9 @@ impl FromStr for TextComponent {
     }
 }
 
-impl Into<String> for TextComponent {
-    fn into(self) -> String {
-        serde_json::to_string(&self).unwrap()
+impl From<TextComponent> for String {
+    fn from(value: TextComponent) -> String {
+        serde_json::to_string(&value).unwrap()
     }
 }
 

@@ -165,6 +165,8 @@ impl StreamWriter {
     }
 }
 
+/// This component was created before [PlayerIdentity](ferrumc_core::identity::player_identity::PlayerIdentity) was added this contains more info like properties/textures.
+///
 #[derive(Clone)]
 pub struct Profile {
     pub profile: Option<GameProfile>,
