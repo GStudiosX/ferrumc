@@ -120,8 +120,8 @@ impl fmt::Display for Font {
 }
 
 impl NBTSerializable for Font {
-    fn serialize(&self, buf: &mut Vec<u8>, _: &NBTSerializeOptions<'_>) {
-        NBTSerializable::serialize(&self.to_string(), buf, &NBTSerializeOptions::None);
+    fn serialize(&self, buf: &mut Vec<u8>, opts: &NBTSerializeOptions<'_>) {
+        NBTSerializable::serialize(&self.to_string(), buf, opts);
     }
 
     fn id() -> u8 { 8 }
