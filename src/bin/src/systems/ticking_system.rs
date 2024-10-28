@@ -50,6 +50,6 @@ impl System for TickingSystem {
     }
 
     fn name(&self) -> &'static str {
-        "keep_alive"
+        "ticking"
     }
 }
