@@ -16,6 +16,9 @@ mod packet_handlers;
 mod systems;
 mod velocity;
 
+#[cfg(feature = "experiments")]
+mod experiments;
+
 pub type Result<T> = std::result::Result<T, errors::BinaryError>;
 
 #[tokio::main]
