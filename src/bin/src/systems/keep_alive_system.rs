@@ -22,11 +22,7 @@ impl KeepAliveSystem {
 #[async_trait]
 impl System for KeepAliveSystem {
     async fn start(self: Arc<Self>, state: GlobalState) {
-        loop {
-            if self.shutdown.load(Ordering::Relaxed) {
-                break;
-            }
-            
+        while !self.shutdown.load(Ordering::Relaxed) {
             let online_players = state.universe.query::<&PlayerIdentity>();
             info!("Online players: {}", online_players.count());
 

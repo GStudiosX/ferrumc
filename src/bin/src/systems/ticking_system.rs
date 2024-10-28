@@ -9,16 +9,22 @@ use std::time::Duration;
 use tokio::time::Instant;
 use tracing::{debug, info};
 
-pub struct TickingSystem;
+pub struct TickingSystem {
+    killed: AtomicBool,
+}
 
-static KILLED: AtomicBool = AtomicBool::new(false);
+impl TickingSystem {
+    pub fn new() -> Self {
+        Self { killed: AtomicBool::new(false) }
+    }
+}
 
 #[async_trait]
 impl System for TickingSystem {
     async fn start(self: Arc<Self>, state: GlobalState) {
         // TODO game time must be loaded from a file
         let mut tick = 0;
-        while !KILLED.load(Ordering::Relaxed) {
+        while !self.killed.load(Ordering::Relaxed) {
             let required_end = Instant::now() + Duration::from_millis(50);
             // TODO handle error
             let res = TickEvent::trigger(TickEvent::new(tick), state.clone()).await;
@@ -40,7 +46,7 @@ impl System for TickingSystem {
 
     async fn stop(self: Arc<Self>, _state: GlobalState) {
         debug!("Stopping ticking system...");
-        KILLED.store(true, Ordering::Relaxed);
+        self.killed.store(true, Ordering::Relaxed);
     }
 
     fn name(&self) -> &'static str {

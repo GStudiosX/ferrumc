@@ -5,31 +5,40 @@ use ferrumc_net::connection::handle_connection;
 use ferrumc_net::GlobalState;
 use crate::systems::definition::System;
 use crate::Result;
-use std::sync::atomic::{AtomicBool, Ordering};
+use tokio::sync::Notify;
 use ferrumc::{ConnectionState, StreamWriter};
 use futures::StreamExt;
 
 pub struct TcpListenerSystem {
-    shutdown: AtomicBool,
+    shutdown: Notify,
 }
 
 #[async_trait]
 impl System for TcpListenerSystem {
     async fn start(self: Arc<Self>, state: GlobalState) {
-        if let Err(e) = self.initiate_loop(state).await {
-            error!("TCP listener system failed with error: {:?}", e);
+        tokio::select! {
+            Err(e) = self.initiate_loop(state) => {
+                 error!("TCP listener system failed with error: {:?}", e);
+            },
+            _ = self.shutdown.notified() => {
+                 info!("Shutting Down");
+            },
+            else => {}
         }
     }
 
     async fn stop(self: Arc<Self>, state: GlobalState) {
         debug!("Stopping TCP listener system...");
-        self.shutdown.store(true, Ordering::Relaxed);
 
-        futures::stream::iter(state.universe.query::<(&mut StreamWriter, &ConnectionState)>())
-            .for_each_concurrent(None, |(mut writer, conn_state)| async move {
-                let _ = writer.kick(&conn_state, "Server Closed").await;
-            })
-            .await;
+        tokio::spawn(async move {
+            futures::stream::iter(state.universe.query::<(&mut StreamWriter, &ConnectionState)>())
+                .for_each_concurrent(None, |(mut writer, conn_state)| async move {
+                    writer.kick(&conn_state, "Server Closed").await.unwrap();
+                })
+                .await;
+
+            self.shutdown.notify_one();
+        });
     }
 
     fn name(&self) -> &'static str {
@@ -40,7 +49,7 @@ impl System for TcpListenerSystem {
 impl TcpListenerSystem {
     pub fn new() -> Self {
         Self {
-            shutdown: AtomicBool::new(false),
+            shutdown: Notify::new(),
         }
     }
 
@@ -48,7 +57,7 @@ impl TcpListenerSystem {
         let tcp_listener = &state.tcp_listener;
         info!("Server is listening on [{}]", tcp_listener.local_addr()?);
 
-        while !self.shutdown.load(Ordering::Relaxed) {
+        loop {
             let (stream, _) = tcp_listener.accept().await?;
             let addy = stream.peer_addr()?;
             debug!("Accepted connection from: {}", addy);
@@ -57,7 +66,5 @@ impl TcpListenerSystem {
                     .instrument(info_span!("conn", %addy).or_current())
             );
         }
-        
-        Ok(())
     }
 }

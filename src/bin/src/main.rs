@@ -4,6 +4,7 @@
 
 #![feature(slice_as_chunks)]
 
+use ferrumc::{ServerState, get_global_config};
 use ferrumc_ecs::Universe;
 use ferrumc_net::server::create_server_listener;
 use systems::definition;
@@ -16,39 +17,6 @@ mod systems;
 mod velocity;
 
 pub type Result<T> = std::result::Result<T, errors::BinaryError>;
-
-// test
-use ferrumc::{macros::{NetEncode, packet}, events::{PlayerAsyncChatEvent, GlobalState, event_handler}, text::*, PlayerIdentity, NetEncodeOpts, StreamWriter, EntityExt, NetResult, ServerState, get_global_config};
-use std::io::Write;
-
-#[derive(NetEncode)]
-#[packet(packet_id = 0x6C)]
-struct SystemChatMessage {
-    message: TextComponent,
-    overlay: bool,
-}
-
-#[event_handler]
-async fn test_join(
-    event: PlayerAsyncChatEvent,
-    state: GlobalState,
-) -> NetResult<PlayerAsyncChatEvent> {
-    let entity = event.entity;
-    let mut writer = entity
-        .get_mut::<StreamWriter>(Arc::clone(&state))?;
-    let profile = entity
-        .get::<PlayerIdentity>(Arc::clone(&state))?;
-
-    writer.send_packet(&SystemChatMessage {
-        message: ComponentBuilder::translate("chat.type.text", vec![
-            ComponentBuilder::text(&profile.username).build(),
-            ComponentBuilder::text(&event.message.message).build(),
-        ]),
-        overlay: false,
-    }, &NetEncodeOpts::WithLength).await?;
-
-    Ok(event)
-}
 
 #[tokio::main]
 async fn main() {
@@ -71,18 +39,19 @@ async fn entry() -> Result<()> {
 
     let state = create_state().await?;
     let global_state = Arc::new(state);
-    
-    let all_systems = tokio::spawn(definition::start_all_systems(Arc::clone(&global_state)));
 
-    // Start the systems and wait until all of them are done
-    tokio::select! {
-        _ = all_systems => {}
-        _ = tokio::signal::ctrl_c() => {}
-    };
-    
-    // Stop all systems
-    definition::stop_all_systems(global_state).await?;
+    tokio::spawn({
+        let global_state = Arc::clone(&global_state);
+        async move {
+            tokio::signal::ctrl_c().await.unwrap();
+            // Stop all systems
+            definition::stop_all_systems(global_state).await;
+        }
+    });
 
+    let systems = tokio::spawn(definition::start_all_systems(Arc::clone(&global_state)));
+    systems.await??;
+    
     Ok(())
 }
 

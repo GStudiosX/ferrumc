@@ -215,6 +215,7 @@ impl Scheduler {
                                 scheduler.wake.notify_one();
                             }
 
+
                             scheduler.active_tasks.fetch_sub(1, AtomicOrdering::Relaxed);
                         }
                     });
@@ -235,13 +236,14 @@ impl Scheduler {
         if !self.wait_for_complete().await {
             info!("Shutdown timeout reached; forcing shutdown.");
         }
+
+        info!("Scheduler was shutdown");
     }
 
     /// wait for active tasks to complete
     ///
     async fn wait_for_complete(self: Arc<Self>) -> bool {
         let mut elapsed = 0;
-
         while self.active_tasks.load(AtomicOrdering::Relaxed) > 0 && elapsed < 10 {
             tokio::time::sleep(Duration::from_secs(1)).await;
             elapsed += 1;
