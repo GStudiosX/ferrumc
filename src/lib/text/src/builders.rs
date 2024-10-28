@@ -1,4 +1,5 @@
-use crate::{*, color::Color};
+use crate::*;
+use paste::paste;
 
 /// Build a component (text, translate, keybind).
 ///
@@ -54,12 +55,55 @@ impl ComponentBuilder {
 pub struct TextComponentBuilder {
     pub(crate) text: String,
     pub(crate) color: Option<Color>,
+    pub(crate) font: Option<Font>,
     pub(crate) bold: Option<bool>,
     pub(crate) italic: Option<bool>,
     pub(crate) underlined: Option<bool>,
     pub(crate) strikethrough: Option<bool>,
     pub(crate) obfuscated: Option<bool>,
+    pub(crate) insertion: Option<String>,
     pub(crate) extra: Vec<TextComponent>,
+}
+
+macro_rules! make_bool_setters {
+    ($($field:ident),*) => {
+        paste! {
+            $(
+                pub fn $field(mut self) -> Self {
+                    self.$field = Some(true);
+                    self
+                }
+
+                pub fn [<not_ $field>](mut self) -> Self {
+                    self.$field = Some(true);
+                    self
+                }
+
+                pub fn [<clear_ $field>](mut self) -> Self {
+                    self.$field = None;
+                    self
+                }
+            )*
+        }
+    }
+}
+
+macro_rules! make_setters {
+    ($(($ty:ident, $field:ident)),*) => {
+        paste! {
+            $(
+                pub fn $field(mut self, $field: impl Into<$ty>) -> Self {
+                    self.$field = Some($field.into());
+                    self
+                }
+
+                pub fn [<clear_ $field>](mut self) -> Self {
+                    self.$field = None;
+                    self
+                }
+            )*
+        }
+    }
 }
 
 impl TextComponentBuilder {
@@ -70,15 +114,8 @@ impl TextComponentBuilder {
         }
     }
 
-    pub fn color(mut self, color: impl Into<Color>) -> Self {
-        self.color = Some(color.into());
-        self
-    }
-
-    pub fn clear_color(mut self) -> Self {
-        self.color = None;
-        self
-    }
+    make_setters!((Color, color), (Font, font), (String, insertion));
+    make_bool_setters!(italic, underlined, strikethrough, obfuscated);
 
     pub fn space(self) -> Self {
         self.extra(ComponentBuilder::space())
@@ -95,11 +132,13 @@ impl TextComponentBuilder {
                 text: self.text,
             },
             color: self.color,
+            font: self.font,
             bold: self.bold,
             italic: self.italic,
             underlined: self.underlined,
             strikethrough: self.strikethrough,
             obfuscated: self.obfuscated,
+            insertion: self.insertion,
             extra: self.extra
         }
     }

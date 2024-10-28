@@ -1,25 +1,22 @@
 use ferrumc_macros::NBTSerialize;
 use serde::{Serialize, Deserialize};
 
-mod r#impl;
 #[cfg(test)]
 mod tests;
 
-pub mod color;
-
+mod utils;
 mod builders;
-pub use builders::*;
+mod r#impl;
 
-use color::Color;
+pub use builders::*;
+pub use utils::*;
 
 pub type JsonTextComponent = String;
-
-//#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, Default, NBTSerialize)]
-//pub struct TextComponent(TextInner);
 
 /// A TextComponent that can be a Text, Translate or Keybind.
 ///
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize, Default, NBTSerialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TextComponent {
     #[serde(flatten)]
     #[nbt(flatten)]
@@ -36,9 +33,9 @@ pub struct TextComponent {
     /// The color field of this TextComponent.
     pub color: Option<Color>,
 
-    /*#[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     /// The font field of this TextComponent.
-    pub font: Option<Font>,*/
+    pub font: Option<Font>,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     /// The bold field of this TextComponent.
@@ -59,6 +56,12 @@ pub struct TextComponent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     /// The obfuscated field of this TextComponent.
     pub obfuscated: Option<bool>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Text to be inserted into chat at the cursor when shift-clicked.
+    ///
+    /// Only used for messages in chat; has no effect in other locations at this time.
+    pub insertion: Option<String>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[nbt(skip_if = "Vec::is_empty")]

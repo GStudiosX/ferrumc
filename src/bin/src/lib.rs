@@ -21,11 +21,7 @@ pub mod macros {
 }
 
 pub mod text {
-    pub use ferrumc_text::{
-        ComponentBuilder, TextComponentBuilder, TextComponent,
-        JsonTextComponent,
-        color::*
-    };
+    pub use ferrumc_text::*;
 }
 
 /// Event API

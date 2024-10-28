@@ -87,7 +87,54 @@ impl NBTSerializable for Color {
 }
 
 impl From<NamedColor> for Color {
-    fn from(value: NamedColor) -> Color {
-        Color::Named(value)
+    fn from(value: NamedColor) -> Self {
+        Self::Named(value)
+    }
+}
+
+/// The font of the text component.
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+pub enum Font {
+    /// The default font.
+    #[serde(rename = "minecraft:default")]
+    Default,
+    /// Unicode font.
+    #[serde(rename = "minecraft:uniform")]
+    Uniform,
+    /// Enchanting table font.
+    #[serde(rename = "minecraft:alt")]
+    Alt,
+    #[serde(untagged)]
+    Custom(String),
+}
+
+impl fmt::Display for Font {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", match self {
+            Self::Default => "minecraft:default",
+            Self::Uniform => "minecraft:uniform",
+            Self::Alt => "minecraft:alt",
+            Self::Custom(key) => key.as_str(),
+        })
+    }
+}
+
+impl NBTSerializable for Font {
+    fn serialize(&self, buf: &mut Vec<u8>, _: &NBTSerializeOptions<'_>) {
+        NBTSerializable::serialize(&self.to_string(), buf, &NBTSerializeOptions::None);
+    }
+
+    fn id() -> u8 { 8 }
+}
+
+impl From<String> for Font {
+    fn from(value: String) -> Self {
+        Self::Custom(value)
+    }
+}
+
+impl From<&str> for Font {
+    fn from(value: &str) -> Self {
+        Self::Custom(value.to_string())
     }
 }

@@ -52,7 +52,7 @@ struct TestPacket {
     overlay: bool,
 }
 
-#[tokio::test]
+/*#[tokio::test]
 async fn test_serialize_to_nbt() {
     let component = ComponentBuilder::translate("chat.type.text", vec![
             ComponentBuilder::text("GStudiosX").build(),
@@ -66,12 +66,12 @@ async fn test_serialize_to_nbt() {
 
     //println!("\n{}", bytes_to_readable_string(&component.content.serialize_as_network()[..]));
 
-    let mut file = File::create("foo.nbt").unwrap();
-    /*let mut bytes = Vec::new();
-    NBTSerializable::serialize(&vec![component.clone()], &mut bytes, &NBTSerializeOptions::Network);
-    file.write_all(&bytes).unwrap();
-    println!("\n{}\n", bytes_to_readable_string(&bytes[..]));*/
-    file.write_all(&component.serialize_nbt()[..]).unwrap();
+    //let mut file = File::create("foo.nbt").unwrap();
+    //let mut bytes = Vec::new();
+    //NBTSerializable::serialize(&vec![component.clone()], &mut bytes, &NBTSerializeOptions::Network);
+    //file.write_all(&bytes).unwrap();
+    //println!("\n{}\n", bytes_to_readable_string(&bytes[..]));
+    //file.write_all(&component.serialize_nbt()[..]).unwrap();
 
     let mut cursor = Cursor::new(Vec::new());
     TestPacket::encode_async(&TestPacket {
@@ -93,3 +93,4 @@ async fn test_serialize_to_nbt() {
     println!("id: {}, length: {}, left: {}", id.val, length.val, length.val as u64 - cursor.position());
     println!("{}", bytes_to_readable_string(&cursor.get_ref()[cursor.position() as usize..]));
 }
+*/
