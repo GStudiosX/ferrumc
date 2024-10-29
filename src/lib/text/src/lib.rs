@@ -23,9 +23,13 @@ pub struct TextComponent {
     /// The content field of this TextComponent.
     ///
     /// ```ignore
-    /// TextContent::Text { text: "text".to_string() }
-    /// TextContent::Translate { .. }
-    /// TextContent::Keybind { keybind: "key.jump".to_string() }
+    /// # use ferrumc_text::*;
+    /// TextContent::Text { text: "text".to_string() };
+    /// TextContent::Translate {
+    ///     translate: "translation".to_string(),
+    ///     with: vec![],
+    /// };
+    /// TextContent::Keybind { keybind: "key.jump".to_string() };
     /// ```
     pub content: TextContent,
 
@@ -62,6 +66,12 @@ pub struct TextComponent {
     ///
     /// Only used for messages in chat; has no effect in other locations at this time.
     pub insertion: Option<String>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[nbt(rename = "clickEvent")]
+    /// Defines an event that occurs when this component is clicked.
+    ///
+    pub click_event: Option<ClickEvent>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[nbt(skip_if = "Vec::is_empty")]

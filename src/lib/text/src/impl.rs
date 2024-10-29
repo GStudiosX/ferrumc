@@ -9,6 +9,7 @@ use tokio::io::AsyncWriteExt;
 use std::fmt;
 use std::ops::Add;
 use std::str::FromStr;
+use paste::paste;
 
 impl From<String> for TextComponent {
     fn from(value: String) -> Self {
@@ -85,6 +86,9 @@ impl fmt::Display for TextComponent {
 }
 
 impl TextComponent {
+    make_setters!((Color, color), (Font, font), (String, insertion), (ClickEvent, click_event));
+    make_bool_setters!(italic, underlined, strikethrough, obfuscated);
+
     pub fn serialize_nbt(&self) -> Vec<u8> {
         let mut vec = Vec::new();
         NBTSerializable::serialize(self, &mut vec, &NBTSerializeOptions::Network);

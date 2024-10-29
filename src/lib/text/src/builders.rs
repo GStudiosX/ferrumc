@@ -43,8 +43,7 @@ impl ComponentBuilder {
 /// A builder to build a TextComponent of type text.
 ///
 /// ```rust
-/// # use ferrumc_text::color::*;
-/// # use ferrumc_text::ComponentBuilder;
+/// # use ferrumc_text::*;
 /// let _ = ComponentBuilder::text("Hello,")
 ///     .color(NamedColor::Red)
 ///     .space()
@@ -62,48 +61,8 @@ pub struct TextComponentBuilder {
     pub(crate) strikethrough: Option<bool>,
     pub(crate) obfuscated: Option<bool>,
     pub(crate) insertion: Option<String>,
+    pub(crate) click_event: Option<ClickEvent>,
     pub(crate) extra: Vec<TextComponent>,
-}
-
-macro_rules! make_bool_setters {
-    ($($field:ident),*) => {
-        paste! {
-            $(
-                pub fn $field(mut self) -> Self {
-                    self.$field = Some(true);
-                    self
-                }
-
-                pub fn [<not_ $field>](mut self) -> Self {
-                    self.$field = Some(true);
-                    self
-                }
-
-                pub fn [<clear_ $field>](mut self) -> Self {
-                    self.$field = None;
-                    self
-                }
-            )*
-        }
-    }
-}
-
-macro_rules! make_setters {
-    ($(($ty:ident, $field:ident)),*) => {
-        paste! {
-            $(
-                pub fn $field(mut self, $field: impl Into<$ty>) -> Self {
-                    self.$field = Some($field.into());
-                    self
-                }
-
-                pub fn [<clear_ $field>](mut self) -> Self {
-                    self.$field = None;
-                    self
-                }
-            )*
-        }
-    }
 }
 
 impl TextComponentBuilder {
@@ -114,7 +73,7 @@ impl TextComponentBuilder {
         }
     }
 
-    make_setters!((Color, color), (Font, font), (String, insertion));
+    make_setters!((Color, color), (Font, font), (String, insertion), (ClickEvent, click_event));
     make_bool_setters!(italic, underlined, strikethrough, obfuscated);
 
     pub fn space(self) -> Self {
@@ -139,6 +98,7 @@ impl TextComponentBuilder {
             strikethrough: self.strikethrough,
             obfuscated: self.obfuscated,
             insertion: self.insertion,
+            click_event: self.click_event,
             extra: self.extra
         }
     }

@@ -14,6 +14,12 @@ use tokio::sync::Notify;
 use tokio::time::{sleep_until, Duration, Instant};
 use tracing::{error, info};
 
+#[cfg(test)]
+mod tests;
+mod errors;
+
+pub use errors::SchedulerError;
+
 pub trait AsyncCallback = 'static
     + Send
     + Sync
@@ -37,7 +43,7 @@ pub struct ScheduledTask {
     period: Instant,
     interval: Option<Duration>,
     runnable: Runnable,
-    cancel: TaskCancel,
+    handle: TaskHandle,
 }
 
 impl ScheduledTask {
@@ -45,20 +51,21 @@ impl ScheduledTask {
         runnable: Runnable,
         delay: Duration,
         interval: Option<Duration>,
-        cancel: TaskCancel,
+        handle: TaskHandle,
     ) -> Self {
         Self {
             period: Instant::now() + delay,
             interval,
             runnable,
-            cancel,
+            handle,
         }
     }
 
     pub async fn run(&self, state: Arc<ServerState>) -> anyhow::Result<()> {
-        if self.cancel.is_cancelled() {
+        if self.handle.is_cancelled() {
             Err(CancelError.into())
         } else {
+            self.handle.notify();
             (self.runnable)(state).await
         }
     }
@@ -85,24 +92,40 @@ impl Ord for ScheduledTask {
 }
 
 #[derive(Debug, Clone)]
-pub struct TaskCancel(Arc<AtomicBool>);
+pub struct TaskHandle(Arc<AtomicBool>, Arc<Notify>);
 
-impl TaskCancel {
+impl TaskHandle {
+    /// INTERNAL ONLY
+    ///
     pub fn new() -> Self {
-        Self(Arc::new(AtomicBool::new(false)))
+        Self(Arc::new(AtomicBool::new(false)), Arc::new(Notify::new()))
     }
 
+    pub(crate) fn notify(&self) {
+        self.1.notify_one();
+    }
+
+    /// Wait for this task to be ran.
+    ///
+    pub async fn wait(&self) {
+        self.1.notified().await;
+    }
+
+    /// Cancel this task.
+    ///
     pub fn cancel(&self) -> bool {
         self.0.store(true, AtomicOrdering::Relaxed);
         true
     }
 
+    /// Check if the task is currently cancelled.
+    ///
     pub fn is_cancelled(&self) -> bool {
         self.0.load(AtomicOrdering::Relaxed)
     }
 }
 
-impl Default for TaskCancel {
+impl Default for TaskHandle {
     fn default() -> Self {
         Self::new()
     }
@@ -132,16 +155,16 @@ impl Scheduler {
         cb: F,
         delay: Duration,
         interval: Option<Duration>,
-    ) -> Result<TaskCancel, String>
+    ) -> Result<TaskHandle, SchedulerError>
     where
         F: Fn(Arc<ServerState>) -> Fut + Send + Sync + 'static + Clone,
         Fut: Future<Output = Result<()>> + Send + Sync,
     {
         if self.shutdown.load(AtomicOrdering::Relaxed) {
-            return Err("the task scheduler has been shutdown".into());
+            return Err(SchedulerError::Shutdown);
         }
 
-        let cancel = TaskCancel::new();
+        let handle = TaskHandle::new();
         // Add scheduled task into the queue
         let scheduled_task = ScheduledTask::new(
             Arc::new(move |state| {
@@ -150,7 +173,7 @@ impl Scheduler {
             }),
             delay,
             interval,
-            cancel.clone(),
+            handle.clone(),
         );
         {
             let mut queue = self.task_queue.lock().await;
@@ -159,7 +182,7 @@ impl Scheduler {
         // Wake up the scheduler
         self.wake.notify_one();
         //trace!("Task scheduled");
-        Ok(cancel)
+        Ok(handle)
     }
 
     /// Shutdown the scheduler this will wait 10 seconds for all active tasks to finish.
@@ -205,7 +228,7 @@ impl Scheduler {
                                     task.runnable,
                                     delay,
                                     task.interval,
-                                    task.cancel,
+                                    task.handle,
                                 );
                                 {
                                     let mut queue = scheduler.task_queue.lock().await;

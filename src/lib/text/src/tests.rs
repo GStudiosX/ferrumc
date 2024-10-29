@@ -1,4 +1,4 @@
-use crate::{*, color::*};
+use crate::*;
 
 fn bytes_to_readable_string(bytes: &[u8]) -> String {
     bytes
@@ -40,9 +40,8 @@ use ferrumc_net_codec::{
     decode::{NetDecode, NetDecodeOpts},
     net_types::var_int::VarInt
 };
-use ferrumc_nbt::NBTSerializeOptions;
 use ferrumc_nbt::NBTSerializable;
-use tokio::io::AsyncWriteExt;
+use ferrumc_nbt::NBTSerializeOptions;
 use std::fs::File;
 
 #[derive(NetEncode)]
@@ -52,12 +51,13 @@ struct TestPacket {
     overlay: bool,
 }
 
-/*#[tokio::test]
+#[tokio::test]
+#[ignore]
 async fn test_serialize_to_nbt() {
     let component = ComponentBuilder::translate("chat.type.text", vec![
-            ComponentBuilder::text("GStudiosX").build(),
-            ComponentBuilder::text("Hi").build(),
-        ]);
+        ComponentBuilder::text("GStudiosX").click_event(ClickEvent::SuggestCommand("/msg GStudiosX".to_string())).build(),
+        ComponentBuilder::text("Hi").build(),
+    ]);
     //println!("{:#?}", component.color);
     println!("{}", component.to_string());
     println!("{}", bytes_to_readable_string(&component.serialize_nbt()[..]));
@@ -66,12 +66,12 @@ async fn test_serialize_to_nbt() {
 
     //println!("\n{}", bytes_to_readable_string(&component.content.serialize_as_network()[..]));
 
-    //let mut file = File::create("foo.nbt").unwrap();
-    //let mut bytes = Vec::new();
-    //NBTSerializable::serialize(&vec![component.clone()], &mut bytes, &NBTSerializeOptions::Network);
+    let mut file = File::create("foo.nbt").unwrap();
+    let mut bytes = Vec::new();
+    NBTSerializable::serialize(&vec![component.clone()], &mut bytes, &NBTSerializeOptions::Network);
     //file.write_all(&bytes).unwrap();
-    //println!("\n{}\n", bytes_to_readable_string(&bytes[..]));
-    //file.write_all(&component.serialize_nbt()[..]).unwrap();
+    println!("\n{}\n", bytes_to_readable_string(&bytes[..]));
+    file.write_all(&component.serialize_nbt()[..]).unwrap();
 
     let mut cursor = Cursor::new(Vec::new());
     TestPacket::encode_async(&TestPacket {
@@ -93,4 +93,3 @@ async fn test_serialize_to_nbt() {
     println!("id: {}, length: {}, left: {}", id.val, length.val, length.val as u64 - cursor.position());
     println!("{}", bytes_to_readable_string(&cursor.get_ref()[cursor.position() as usize..]));
 }
-*/

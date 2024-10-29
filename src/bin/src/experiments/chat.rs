@@ -26,7 +26,10 @@ async fn test_chat_handler(
         .get::<PlayerIdentity>(Arc::clone(&state))?;
     writer.send_packet(&SystemChatMessage {
         message: ComponentBuilder::translate("chat.type.text", vec![
-            ComponentBuilder::text(&profile.username).font(Font::Alt).build(),
+            ComponentBuilder::text(&profile.username)
+                .color(NamedColor::Blue)
+                .click_event(ClickEvent::SuggestCommand(format!("/msg {}", profile.username)))
+                .build(),
             ComponentBuilder::text(&event.message.message).build(),
         ]),
         overlay: false,
