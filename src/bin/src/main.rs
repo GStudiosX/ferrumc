@@ -7,8 +7,8 @@
 use ferrumc::{ServerState, get_global_config};
 use ferrumc_ecs::Universe;
 use ferrumc_net::server::create_server_listener;
-use systems::definition;
 use std::sync::Arc;
+use systems::definition;
 use tracing::{error, info, trace};
 
 pub(crate) mod errors;
@@ -52,12 +52,12 @@ async fn entry() -> Result<()> {
         }
     });
 
+    // Start the systems and wait until all of them are done
     let systems = tokio::spawn(definition::start_all_systems(Arc::clone(&global_state)));
     systems.await??;
     
     Ok(())
 }
-
 
 async fn create_state() -> Result<ServerState> {
     let listener = create_server_listener().await?;

@@ -1,14 +1,13 @@
-use std::sync::Arc;
-use std::sync::LazyLock;
-use ferrumc_net::{GlobalState, NetResult};
-use futures::stream::FuturesUnordered;
-use tracing::{debug, debug_span, info, Instrument};
-use async_trait::async_trait;
 use crate::systems::keep_alive_system::KeepAliveSystem;
 use crate::systems::tcp_listener_system::TcpListenerSystem;
 use crate::systems::ticking_system::TickingSystem;
 use crate::systems::scheduler_system::SchedulerSystem;
 use futures::StreamExt;
+use async_trait::async_trait;
+use ferrumc_net::{GlobalState, NetResult};
+use futures::stream::FuturesUnordered;
+use std::sync::{Arc, LazyLock};
+use tracing::{debug, debug_span, info, Instrument};
 
 #[async_trait]
 pub trait System: Send + Sync {
@@ -18,21 +17,28 @@ pub trait System: Send + Sync {
     fn name(&self) -> &'static str;
 }
 
-static SYSTEMS: LazyLock<Vec<Arc<dyn System>>> = LazyLock::new(|| vec![
-    Arc::new(SchedulerSystem),
-    Arc::new(KeepAliveSystem::new()),
-    Arc::new(TickingSystem::new()),
-    Arc::new(TcpListenerSystem::new()),
-]);
+static SYSTEMS: LazyLock<Vec<Arc<dyn System>>> = LazyLock::new(|| {
+    create_systems()
+});
+
+pub fn create_systems() -> Vec<Arc<dyn System>> {
+    vec![
+        Arc::new(SchedulerSystem),
+        Arc::new(TcpListenerSystem::new()),
+        Arc::new(KeepAliveSystem::new()),
+        Arc::new(TickingSystem::new()),
+    ]
+}
 
 pub async fn start_all_systems(state: GlobalState) -> NetResult<()> {
     let handles = FuturesUnordered::new();
 
-    for system in &*SYSTEMS {
+    for system in SYSTEMS.iter() {
         let name = system.name();
 
         let handle = tokio::spawn(
-            system.clone()
+            system
+                .clone()
                 .start(state.clone())
                 .instrument(debug_span!("sys", %name)),
         );
@@ -45,15 +51,13 @@ pub async fn start_all_systems(state: GlobalState) -> NetResult<()> {
 }
 
 pub async fn stop_all_systems(state: GlobalState) {
-    //tokio::spawn(async move {
-        info!("Stopping all systems...");
+    info!("Stopping all systems...");
 
-        futures::stream::iter(&*SYSTEMS).for_each_concurrent(None, |system| {
-            let state = state.clone();
-            async move {
-                debug!("Stopping system: {}", system.name());
-                system.clone().stop(state).await;
-            }
-        }).await;
-    //})
+    futures::stream::iter(&*SYSTEMS).for_each_concurrent(None, |system| {
+        let state = state.clone();
+        async move {
+            debug!("Stopping system: {}", system.name());
+            system.clone().stop(state).await;
+        }
+    }).await;
 }
