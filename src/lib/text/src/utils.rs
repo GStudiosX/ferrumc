@@ -1,6 +1,7 @@
 use serde::{Serialize, Deserialize};
 use ferrumc_nbt::NBTSerializable;
 use ferrumc_nbt::NBTSerializeOptions;
+use ferrumc_macros::NBTSerialize;
 use std::fmt;
 
 #[macro_export]
@@ -47,24 +48,12 @@ macro_rules! make_setters {
 }
 
 // TODO: better api for custom colors
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, NBTSerialize)]
 #[serde(untagged)]
+#[nbt(tag_type = 8)]
 pub enum Color {
     Named(NamedColor),
     Hex(String),
-}
-
-impl NBTSerializable for Color {
-    fn serialize(&self, buf: &mut Vec<u8>, opts: &NBTSerializeOptions<'_>) {
-        match self {
-            Color::Named(color) => 
-                NBTSerializable::serialize(color, buf, opts),
-            Color::Hex(str) =>
-                NBTSerializable::serialize(str, buf, opts),
-        }
-    }
-
-    fn id() -> u8 { 8 }
 }
 
 impl From<NamedColor> for Color {
@@ -73,8 +62,9 @@ impl From<NamedColor> for Color {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default, NBTSerialize)]
 #[serde(rename_all(serialize = "snake_case"))]
+#[nbt(tag_type = 8, tag = "untagged", rename_all = "snake_case")]
 pub enum NamedColor {
     Black,
     DarkBlue,
@@ -93,37 +83,6 @@ pub enum NamedColor {
     Yellow,
     #[default]
     White,
-}
-
-impl fmt::Display for NamedColor {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", match self {
-            Self::Black => "black",
-            Self::DarkBlue => "dark_blue",
-            Self::DarkGreen => "dark_green",
-            Self::DarkAqua => "dark_aqua",
-            Self::DarkRed => "dark_red",
-            Self::DarkPurple => "dark_purple",
-            Self::Gold => "gold",
-            Self::Gray => "gray",
-            Self::DarkGray => "dark_gray",
-            Self::Blue => "blue",
-            Self::Green => "green",
-            Self::Aqua => "aqua",
-            Self::Red => "red",
-            Self::LightPurple => "light_purple",
-            Self::Yellow => "yellow",
-            Self::White => "white",
-        })
-    }
-}
-
-impl NBTSerializable for NamedColor {
-    fn serialize(&self, buf: &mut Vec<u8>, opts: &NBTSerializeOptions<'_>) {
-        NBTSerializable::serialize(&self.to_string(), buf, opts);
-    }
-
-    fn id() -> u8 { 8 }
 }
 
 /// The font of the text component.
@@ -176,8 +135,9 @@ impl From<&str> for Font {
 
 /// The click event of the text component
 ///
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, NBTSerialize)]
 #[serde(tag = "action", content = "value", rename_all(serialize = "snake_case"))]
+#[nbt(tag = "action", content = "value", rename_all = "snake_case")]
 pub enum ClickEvent {
     /// Opens an URL
     ///
@@ -194,37 +154,4 @@ pub enum ClickEvent {
     /// Copies the given text to the client's clipboard when clicked.
     ///
     CopyToClipboard(String),
-}
-
-impl NBTSerializable for ClickEvent {
-    fn serialize(&self, buf: &mut Vec<u8>, opts: &NBTSerializeOptions<'_>) {
-        NBTSerializable::serialize(&Self::id(), buf, &NBTSerializeOptions::None);
-
-        match opts {
-            NBTSerializeOptions::WithHeader(name) => {
-                 NBTSerializable::serialize(name, buf, &NBTSerializeOptions::None);
-            },
-            _ => {}
-        }
-
-        NBTSerializable::serialize(&match self {
-            Self::OpenUrl(..) => "open_url",
-            Self::RunCommand(..) => "run_command",
-            Self::SuggestCommand(..) => "suggest_command",
-            Self::ChangePage(..) => "change_page",
-            Self::CopyToClipboard(..) => "copy_to_clipboard",
-        }, buf, &NBTSerializeOptions::WithHeader("action"));
-
-        match self {
-            Self::OpenUrl(url) => NBTSerializable::serialize(&url.as_str(), buf, &NBTSerializeOptions::WithHeader("value")),
-            Self::RunCommand(command) => NBTSerializable::serialize(&command.as_str(), buf, &NBTSerializeOptions::WithHeader("value")),
-            Self::SuggestCommand(command) => NBTSerializable::serialize(&command.as_str(), buf, &NBTSerializeOptions::WithHeader("value")),
-            Self::ChangePage(page) => NBTSerializable::serialize(&page.to_string().as_str(), buf, &NBTSerializeOptions::WithHeader("value")),
-            Self::CopyToClipboard(text) => NBTSerializable::serialize(&text.as_str(), buf, &NBTSerializeOptions::WithHeader("value")),
-        }
-
-        NBTSerializable::serialize(&0u8, buf, &NBTSerializeOptions::None);
-    }
-
-    fn id() -> u8 { 10 }
 }

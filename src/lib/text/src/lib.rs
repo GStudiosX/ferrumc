@@ -17,6 +17,7 @@ pub type JsonTextComponent = String;
 ///
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize, Default, NBTSerialize)]
 #[serde(rename_all = "camelCase")]
+#[nbt(rename_all = "camel_case")]
 pub struct TextComponent {
     #[serde(flatten)]
     #[nbt(flatten)]
@@ -68,7 +69,6 @@ pub struct TextComponent {
     pub insertion: Option<String>,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[nbt(rename = "clickEvent")]
     /// Defines an event that occurs when this component is clicked.
     ///
     pub click_event: Option<ClickEvent>,

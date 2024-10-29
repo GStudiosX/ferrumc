@@ -55,7 +55,9 @@ struct TestPacket {
 #[ignore]
 async fn test_serialize_to_nbt() {
     let component = ComponentBuilder::translate("chat.type.text", vec![
-        ComponentBuilder::text("GStudiosX").click_event(ClickEvent::SuggestCommand("/msg GStudiosX".to_string())).build(),
+        ComponentBuilder::text("GStudiosX").click_event(ClickEvent::SuggestCommand("/msg GStudiosX".to_string()))
+            .color(NamedColor::Blue)
+            .build(),
         ComponentBuilder::text("Hi").build(),
     ]);
     //println!("{:#?}", component.color);
