@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use ferrumc_general_purpose::simd::arrays;
 use super::{NBTSerializable, NBTSerializeOptions};
+use uuid::Uuid;
 
 macro_rules! impl_ser_primitives {
     ($($($ty:ty) | * > $id:expr),*) => {
@@ -41,6 +42,19 @@ impl_ser_primitives!(
     f64 > TAG_DOUBLE
 );
 
+impl<T> NBTSerializable for Box<T>
+where
+    T: NBTSerializable,
+{
+    fn serialize(&self, buf: &mut Vec<u8>, options: &NBTSerializeOptions<'_>) {
+        T::serialize(&*self, buf, options);
+    }
+
+    fn id() -> u8 {
+        T::id()
+    }
+}
+
 impl NBTSerializable for bool {
     fn serialize(&self, buf: &mut Vec<u8>, options: &NBTSerializeOptions<'_>) {
         write_header::<Self>(buf, options);
@@ -55,6 +69,18 @@ impl NBTSerializable for bool {
 impl NBTSerializable for String {
     fn serialize(&self, buf: &mut Vec<u8>, options: &NBTSerializeOptions<'_>) {
         self.as_str().serialize(buf, options);
+    }
+
+    fn id() -> u8 {
+        TAG_STRING
+    }
+}
+
+impl NBTSerializable for Uuid {
+    fn serialize(&self, buf: &mut Vec<u8>, options: &NBTSerializeOptions<'_>) {
+        NBTSerializable::serialize(&&self.as_hyphenated()
+            .encode_lower(&mut Uuid::encode_buffer())[..],
+            buf, options);
     }
 
     fn id() -> u8 {

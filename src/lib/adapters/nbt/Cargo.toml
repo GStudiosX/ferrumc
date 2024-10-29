@@ -11,6 +11,8 @@ ferrumc-net-codec = { workspace = true }
 tracing = { workspace = true}
 tokio = { workspace = true }
 ferrumc-general-purpose = {  workspace = true }
+uuid = { workspace = true }
+serde = { workspace = true }
 
 [lints]
 workspace = true

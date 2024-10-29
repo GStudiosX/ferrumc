@@ -16,6 +16,8 @@ pub enum NBTError {
     InvalidNBTData,
     #[error("Try from slice error: {0}")]
     TryFromSlice(#[from] std::array::TryFromSliceError),
+    #[error("Invalid UUID: {0}")]
+    InvalidUUID(#[from] uuid::Error),
     #[error("The NBT data is compressed.")]
     CompressedData,
     #[error("The NBT token was empty.")]

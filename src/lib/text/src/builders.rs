@@ -62,6 +62,7 @@ pub struct TextComponentBuilder {
     pub(crate) obfuscated: Option<bool>,
     pub(crate) insertion: Option<String>,
     pub(crate) click_event: Option<ClickEvent>,
+    pub(crate) hover_event: Option<HoverEvent>,
     pub(crate) extra: Vec<TextComponent>,
 }
 
@@ -73,8 +74,8 @@ impl TextComponentBuilder {
         }
     }
 
-    make_setters!((Color, color), (Font, font), (String, insertion), (ClickEvent, click_event));
-    make_bool_setters!(italic, underlined, strikethrough, obfuscated);
+    make_setters!((Color, color), (Font, font), (String, insertion), (ClickEvent, click_event), (HoverEvent, hover_event));
+    make_bool_setters!(bold, italic, underlined, strikethrough, obfuscated);
 
     pub fn space(self) -> Self {
         self.extra(ComponentBuilder::space())
@@ -99,7 +100,8 @@ impl TextComponentBuilder {
             obfuscated: self.obfuscated,
             insertion: self.insertion,
             click_event: self.click_event,
-            extra: self.extra
+            hover_event: self.hover_event,
+            extra: self.extra,
         }
     }
 }

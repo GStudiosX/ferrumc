@@ -13,10 +13,13 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 paste = { workspace = true }
 #derive_builder = "0.20.2"
+uuid = { workspace = true }
 
 [dev-dependencies]
 ferrumc-config = { workspace = true }
 flate2 = { workspace = true }
+
+valence_text = "=0.2.0-alpha.1"
 
 [lints]
 workspace = true

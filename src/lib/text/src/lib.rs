@@ -73,6 +73,11 @@ pub struct TextComponent {
     ///
     pub click_event: Option<ClickEvent>,
 
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Defines an event that occurs when this component is hovered over.
+    ///
+    pub hover_event: Option<HoverEvent>,
+
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[nbt(skip_if = "Vec::is_empty")]
     /// The with field of this TextComponent.

@@ -8,6 +8,8 @@ pub trait FromNbt<'a>: Sized {
 mod primitives {
     use super::*;
     use crate::de::borrow::NbtDeserializable;
+    use uuid::Uuid;
+    use std::str::FromStr;
 
     macro_rules! impl_for_primitives {
         ($($ty:ty) | *, $variant:ident) => {
@@ -58,6 +60,18 @@ mod primitives {
         fn from_nbt(_tapes: &NbtTape<'a>, element: &NbtTapeElement<'a>) -> Result<Self> {
             match element {
                 NbtTapeElement::String(val) => Ok(val),
+                _ => Err(NBTError::TypeMismatch {
+                    expected: "String",
+                    found: element.nbt_type(),
+                }),
+            }
+        }
+    }
+
+    impl FromNbt<'_> for Uuid {
+        fn from_nbt(_tapes: &NbtTape, element: &NbtTapeElement) -> Result<Self> {
+            match element {
+                NbtTapeElement::String(val) => Ok(Uuid::from_str(val)?),
                 _ => Err(NBTError::TypeMismatch {
                     expected: "String",
                     found: element.nbt_type(),

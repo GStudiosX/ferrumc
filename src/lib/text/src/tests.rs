@@ -1,4 +1,5 @@
 use crate::*;
+use valence_text::{IntoText, Text};
 
 fn bytes_to_readable_string(bytes: &[u8]) -> String {
     bytes
@@ -31,6 +32,64 @@ fn test_to_string() {
         component.to_string(), 
         "{\"text\":\"This is a test!\"}".to_string()
     );
+    let component = ComponentBuilder::text("This is a test!")
+        .color(NamedColor::Blue)
+        .build();
+    assert_eq!(
+        component.to_string(), 
+        "{\"text\":\"This is a test!\",\"color\":\"blue\"}".to_string()
+    );
+    let component = ComponentBuilder::keybind("key.jump");
+    assert_eq!(
+        component.to_string(), 
+        "{\"keybind\":\"key.jump\"}".to_string()
+    );
+    let component = 
+        TextComponent::from("This is a test!")
+        + TextComponent::from(" extra!");
+    assert_eq!(
+        component.to_string(),
+        "{\"text\":\"This is a test!\",\"extra\":[{\"text\":\" extra!\"}]}".to_string()
+    );
+    let component = ComponentBuilder::text("This is a test!")
+        .hover_event(HoverEvent::ShowText(Box::new(TextComponent::from("boo"))))
+        .build();
+    assert_eq!(
+        component.to_string(), 
+        ("This is a test!".into_text()
+            .on_hover_show_text("boo"))
+            .to_string()
+    );
+    let component = ComponentBuilder::text("This is a test!")
+        .underlined()
+        .hover_event(HoverEvent::ShowText(Box::new(TextComponent::from("boo"))))
+        .build();
+    assert_eq!(
+        component.to_string(), 
+        ("This is a test!".into_text()
+            .underlined()
+            .on_hover_show_text("boo"))
+            .to_string()
+    );
+    let component = ComponentBuilder::text("This is a test!")
+        .underlined()
+        .bold()
+        .hover_event(HoverEvent::ShowText(Box::new(TextComponent::from("boo"))))
+        .build();
+    assert_eq!(
+        component.to_string(), 
+        ("This is a test!"
+            .underlined()
+            .bold()
+            .on_hover_show_text("boo"))
+            .to_string()
+    );
+    let component = ComponentBuilder::keybind("key.jump");
+    assert_eq!(
+        component.to_string(), 
+        Text::keybind("key.jump").to_string()
+    );
+
 }
 
 use std::io::{Cursor, Write};
@@ -55,10 +114,19 @@ struct TestPacket {
 #[ignore]
 async fn test_serialize_to_nbt() {
     let component = ComponentBuilder::translate("chat.type.text", vec![
-        ComponentBuilder::text("GStudiosX").click_event(ClickEvent::SuggestCommand("/msg GStudiosX".to_string()))
+        ComponentBuilder::text("GStudiosX")
+            .click_event(ClickEvent::SuggestCommand("/msg GStudiosX".to_string()))
+            .hover_event(HoverEvent::ShowEntity {
+                entity_type: "minecraft:player".to_string(),
+                id: uuid::Uuid::new_v4(),
+                name: Some("GStudiosX".to_string()),
+            })
             .color(NamedColor::Blue)
             .build(),
-        ComponentBuilder::text("Hi").font("custom:test").build(),
+        ComponentBuilder::text("Hi")
+            .font("custom:test")
+            .extra(ComponentBuilder::keybind("key.jump"))
+            .build(),
     ]);
     //println!("{:#?}", component.color);
     println!("{}", component.to_string());

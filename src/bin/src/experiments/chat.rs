@@ -29,8 +29,13 @@ async fn test_chat_handler(
             ComponentBuilder::text(&profile.username)
                 .color(NamedColor::Blue)
                 .click_event(ClickEvent::SuggestCommand(format!("/msg {}", profile.username)))
+                .hover_event(HoverEvent::ShowEntity {
+                    entity_type: "minecraft:player".to_string(),
+                    id: uuid::Uuid::from_u128(profile.uuid),
+                    name: Some(profile.username.clone())
+                })
                 .build(),
-            ComponentBuilder::text(&event.message.message).font(Font::Uniform).build(),
+            ComponentBuilder::text(&event.message.message).build(),
         ]),
         overlay: false,
     }, &NetEncodeOpts::WithLength).await?;

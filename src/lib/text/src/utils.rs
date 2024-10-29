@@ -1,3 +1,4 @@
+use crate::*;
 use serde::{Serialize, Deserialize};
 use ferrumc_macros::NBTSerialize;
 
@@ -136,4 +137,37 @@ pub enum ClickEvent {
     /// Copies the given text to the client's clipboard when clicked.
     ///
     CopyToClipboard(String),
+}
+
+/// The hover event of the text component
+///
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, NBTSerialize)]
+#[serde(tag = "action", content = "contents", rename_all(serialize = "snake_case"))]
+#[nbt(tag = "action", content = "contents", rename_all = "snake_case")]
+pub enum HoverEvent {
+    ShowText(Box<TextComponent>),
+    ShowItem {
+        /// The identifier of the item.
+        ///
+        id: String,
+        /// The number of items in the item stack.
+        ///
+        count: u32,
+        /// The item's sNBT as you would use in /give.
+        ///
+        tag: String,
+    },
+    ShowEntity {
+        #[serde(rename = "type", default)]
+        #[nbt(rename = "type")]
+        /// Identifier of entities type.
+        ///
+        entity_type: String,
+        /// The entities uuid.
+        ///
+        id: uuid::Uuid,
+        /// The entities custom name.
+        ///
+        name: Option<String>,
+    },
 }

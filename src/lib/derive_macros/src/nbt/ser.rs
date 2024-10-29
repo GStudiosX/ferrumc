@@ -141,8 +141,6 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
                 let tag_name = variant_case.transform(variant_name);
 
-                // println!("{:#?} {:#?} {:#?}", variant_case, tagged, variant_content);
-
                 let serialize_fields = match &variant.fields {
                     Fields::Named(fields_named) => {
                         let fields = fields_named.named.iter().map(|field| {
@@ -179,9 +177,23 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
                         let field_idents = fields_named.named.iter().map(|f| &f.ident);
 
+                        let fields = quote! { #(#fields)* };
+                        let tagged = if let Some(tag) = tagged {
+                            if untagged { fields }
+                            else {
+                                quote! {
+                                    <&'_ str as ::ferrumc_nbt::NBTSerializable>::serialize(&#tag_name, writer, &::ferrumc_nbt::NBTSerializeOptions::WithHeader(#tag));
+                                    <u8 as ::ferrumc_nbt::NBTSerializable>::serialize(&10, writer, &::ferrumc_nbt::NBTSerializeOptions::None);
+                                    <&'_ str as ::ferrumc_nbt::NBTSerializable>::serialize(&#variant_content, writer, &::ferrumc_nbt::NBTSerializeOptions::None);
+                                    #fields
+                                    <u8 as ::ferrumc_nbt::NBTSerializable>::serialize(&0u8, writer, &::ferrumc_nbt::NBTSerializeOptions::None);
+                                }
+                            }
+                        } else { fields };
+
                         quote! {
                             { #(#field_idents),* } => {
-                                #(#fields)*
+                                #tagged
                             }
                         }
                     }

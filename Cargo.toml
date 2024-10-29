@@ -131,7 +131,7 @@ bitmask-enum = "2.2.4"
 hashbrown = "0.15.0"
 tinyvec = "1.8.0"
 dashmap = "6.1.0"
-uuid = { version = "1.11.0", features = ["v4", "v3"] }
+uuid = { version = "1.11.0", features = ["v4", "v3", "serde"] }
 
 # Macros
 lazy_static = "1.5.0"
