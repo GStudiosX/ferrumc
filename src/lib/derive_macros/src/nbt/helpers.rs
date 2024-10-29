@@ -70,13 +70,13 @@ impl From<String> for Cases {
 pub enum NbtFieldAttribute {
     /// Represents the `rename` attribute, e.g., `#[nbt(rename = "new_name")]`.
     Rename { new_name: String },
-    /// For enums only.
+    /// Rename all fields or tagged enum variants to match a case.
     RenameAll { case: Cases },
     /// For enums only.
     Tag { tag: String },
     /// For enums only.
     Content { content: String },
-    /// For enums only
+    /// Changes the tag type used in seralization.
     TagType { tag: u8 },
     /// Flatten the contents of this field into the container it is defined in.
     Flatten,

@@ -28,6 +28,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
                     NbtFieldAttribute::RenameAll { case } => {
                         variant_case = case.clone();
                     },
+                    NbtFieldAttribute::TagType { tag } => { tag_type = *tag; },
                     _ => {}
                 }
             }
