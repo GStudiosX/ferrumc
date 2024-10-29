@@ -30,7 +30,7 @@ async fn test_chat_handler(
                 .color(NamedColor::Blue)
                 .click_event(ClickEvent::SuggestCommand(format!("/msg {}", profile.username)))
                 .build(),
-            ComponentBuilder::text(&event.message.message).build(),
+            ComponentBuilder::text(&event.message.message).font(Font::Uniform).build(),
         ]),
         overlay: false,
     }, &NetEncodeOpts::WithLength).await?;

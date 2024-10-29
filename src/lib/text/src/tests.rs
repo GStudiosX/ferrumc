@@ -58,7 +58,7 @@ async fn test_serialize_to_nbt() {
         ComponentBuilder::text("GStudiosX").click_event(ClickEvent::SuggestCommand("/msg GStudiosX".to_string()))
             .color(NamedColor::Blue)
             .build(),
-        ComponentBuilder::text("Hi").build(),
+        ComponentBuilder::text("Hi").font("custom:test").build(),
     ]);
     //println!("{:#?}", component.color);
     println!("{}", component.to_string());

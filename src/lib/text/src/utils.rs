@@ -1,8 +1,5 @@
 use serde::{Serialize, Deserialize};
-use ferrumc_nbt::NBTSerializable;
-use ferrumc_nbt::NBTSerializeOptions;
 use ferrumc_macros::NBTSerialize;
-use std::fmt;
 
 #[macro_export]
 macro_rules! make_bool_setters {
@@ -87,38 +84,23 @@ pub enum NamedColor {
 
 /// The font of the text component.
 ///
-#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, NBTSerialize)]
+#[nbt(tag_type = 8, tag = "untagged")]
 pub enum Font {
     /// The default font.
     #[serde(rename = "minecraft:default")]
+    #[nbt(rename = "minecraft:default")]
     Default,
     /// Unicode font.
     #[serde(rename = "minecraft:uniform")]
+    #[nbt(rename = "minecraft:uniform")]
     Uniform,
     /// Enchanting table font.
     #[serde(rename = "minecraft:alt")]
+    #[nbt(rename = "minecraft:alt")]
     Alt,
     #[serde(untagged)]
     Custom(String),
-}
-
-impl fmt::Display for Font {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", match self {
-            Self::Default => "minecraft:default",
-            Self::Uniform => "minecraft:uniform",
-            Self::Alt => "minecraft:alt",
-            Self::Custom(key) => key.as_str(),
-        })
-    }
-}
-
-impl NBTSerializable for Font {
-    fn serialize(&self, buf: &mut Vec<u8>, opts: &NBTSerializeOptions<'_>) {
-        NBTSerializable::serialize(&self.to_string(), buf, opts);
-    }
-
-    fn id() -> u8 { 8 }
 }
 
 impl From<String> for Font {

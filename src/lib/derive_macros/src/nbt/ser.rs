@@ -103,7 +103,8 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }
         Data::Enum(data_enum) => {
             let variants = data_enum.variants.iter().map(|variant| {
-                let variant_name = &variant.ident;
+                let variant_ident = &variant.ident;
+                let mut variant_name = variant_ident.to_string();
 
                 let mut variant_case: Cases = Cases::Normal; // will only be used if tagged
                 let mut tagged: Option<LitStr> = None;
@@ -129,7 +130,16 @@ pub fn derive(input: TokenStream) -> TokenStream {
                     }
                 }
 
-                let tag_name = variant_case.transform(variant_name.to_string());
+                for attr in NbtFieldAttribute::from_variant(&variant) {
+                    match attr {
+                        NbtFieldAttribute::Rename { new_name } => {
+                            variant_name = new_name.clone();
+                        },
+                        _ => {},
+                    }
+                }
+
+                let tag_name = variant_case.transform(variant_name);
 
                 // println!("{:#?} {:#?} {:#?}", variant_case, tagged, variant_content);
 
@@ -237,7 +247,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
                 };
 
                 quote! {
-                    Self::#variant_name #serialize_fields
+                    Self::#variant_ident #serialize_fields
                 }
             });
 

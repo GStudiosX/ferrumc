@@ -1,5 +1,5 @@
 use crate::helpers::is_field_type_optional;
-use syn::{Field, LitStr, LitInt, Meta, DeriveInput};
+use syn::{Variant, Field, LitStr, LitInt, Meta, DeriveInput};
 
 #[derive(Debug, Clone)]
 pub enum Cases {
@@ -151,6 +151,48 @@ impl NbtFieldAttribute {
                             .expect("Expected case to be a string").value().into();
                         attributes.push(NbtFieldAttribute::RenameAll {
                             case: case
+                        });
+                    }
+                    _ => panic!("Unknown attribute: {}", name),
+                }
+
+                Ok(())
+            })
+            .expect("Failed to parse nested meta");
+        }
+
+        attributes
+    }
+
+    pub fn from_variant(variant: &Variant) -> Vec<NbtFieldAttribute> {
+        let mut attributes = Vec::new();
+
+        for attr in &variant.attrs {
+            if !attr.path().is_ident("nbt") {
+                continue;
+            }
+
+            let meta = &attr.meta;
+            let Meta::List(list) = meta else {
+                continue;
+            };
+
+            list.parse_nested_meta(|nested_meta| {
+                let name = nested_meta
+                    .path
+                    .get_ident()
+                    .expect("Expected an identifier");
+
+                match name.to_string().as_str() {
+                    "rename" => {
+                        let rename = nested_meta
+                            .value()
+                            .expect("Expected rename to have a value");
+                        let rename = rename
+                            .parse::<LitStr>()
+                            .expect("Expected rename to be a string");
+                        attributes.push(NbtFieldAttribute::Rename {
+                            new_name: rename.value(),
                         });
                     }
                     _ => panic!("Unknown attribute: {}", name),
