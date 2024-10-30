@@ -78,9 +78,7 @@ impl NBTSerializable for String {
 
 impl NBTSerializable for Uuid {
     fn serialize(&self, buf: &mut Vec<u8>, options: &NBTSerializeOptions<'_>) {
-        NBTSerializable::serialize(&&self.as_hyphenated()
-            .encode_lower(&mut Uuid::encode_buffer())[..],
-            buf, options);
+        NBTSerializable::serialize(&self.as_hyphenated().to_string().as_str(), buf, options);
     }
 
     fn id() -> u8 {

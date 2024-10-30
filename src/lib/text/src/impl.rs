@@ -86,7 +86,7 @@ impl fmt::Display for TextComponent {
 }
 
 impl TextComponent {
-    make_setters!((Color, color), (Font, font), (String, insertion), (ClickEvent, click_event));
+    make_setters!((Color, color), (Font, font), (String, insertion), (ClickEvent, click_event), (HoverEvent, hover_event));
     make_bool_setters!(bold, italic, underlined, strikethrough, obfuscated);
 
     pub fn serialize_nbt(&self) -> Vec<u8> {
