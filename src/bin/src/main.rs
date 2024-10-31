@@ -13,10 +13,6 @@ use tracing::{error, info, trace};
 use std::time::Duration;
 use rand::seq::IndexedRandom;
 
-#[cfg(feature = "experiments")]
-// Experimental or testing features/events on the server can go into this module.
-mod experiments;
-
 pub(crate) mod errors;
 mod packet_handlers;
 mod systems;

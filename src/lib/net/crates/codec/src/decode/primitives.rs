@@ -3,6 +3,7 @@ use std::hash::Hash;
 use crate::decode::{NetDecode, NetDecodeOpts, NetDecodeResult};
 use crate::net_types::var_int::VarInt;
 use std::io::Read;
+use std::mem::MaybeUninit;
 
 macro_rules! impl_for_primitives {
     ($($primitive_type:ty | $alt:ty),*) => {
@@ -89,14 +90,16 @@ where
 
 impl<T, const N: usize> NetDecode for [T; N]
 where
-    T: NetDecode + Default + Clone + std::fmt::Debug,
+    T: NetDecode,
 {
     fn decode<R: Read>(reader: &mut R, opts: &NetDecodeOpts) -> NetDecodeResult<Self> {
-        let mut arr = vec![T::default(); N];
-        for elem in arr.iter_mut().take(N) {
-            *elem = T::decode(reader, opts)?;
+        let mut arr: [MaybeUninit<T>; N] = [const { MaybeUninit::uninit() }; N];
+
+        for elem in &mut arr[..] {
+            elem.write(T::decode(reader, opts)?);
         }
-        Ok(arr.try_into().unwrap())
+
+        Ok(unsafe { MaybeUninit::array_assume_init(arr) })
     }
 }
 
