@@ -9,8 +9,6 @@ pub use ferrumc_events::{
     errors::EventsError
 };
 
-pub use ferrumc_net::connection::PlayerDisconnectEvent;
-
 pub use ferrumc_net::packets::incoming::server_bound_plugin_message::LoginPluginResponseEvent;
 pub use ferrumc_net::packets::incoming::chat_message::PlayerAsyncChatEvent;
 
@@ -103,7 +101,7 @@ pub struct PlayerStartLoginEvent {
     /// Be warned that this event can be cancelled or this field can be overriden by other listeners and this could mean your profile
     /// will never be used!
     ///
-    pub profile: ferrumc_net::connection::GameProfile,
+    pub profile: crate::GameProfile,
 }
 
 /// This event is triggered right after the client acknowledges the configuration state.
@@ -113,4 +111,17 @@ pub struct PlayerStartLoginEvent {
 pub struct PlayerJoinGameEvent {
     /// The entity that this event was fired for.
     pub entity: Entity,
+}
+
+/// This is called when the player gets disconnected either by the server, player leaving or invalid packets and other errors.
+///
+#[derive(Event)]
+pub struct PlayerDisconnectEvent {
+    entity: Entity,
+}
+
+impl PlayerDisconnectEvent {
+    pub fn entity(&self) -> Entity {
+        self.entity
+    }
 }

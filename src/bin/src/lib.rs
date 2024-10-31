@@ -2,18 +2,27 @@
 #![forbid(unsafe_code)]
 
 use std::sync::Arc;
-use ferrumc_scheduler::Scheduler;
 use lazy_static::lazy_static;
+
+use ferrumc_scheduler::Scheduler;
 
 pub use ferrumc_config::statics::get_global_config;
 
-pub use ferrumc_net_codec::encode::{NetEncodeOpts, NetEncode};
-pub use ferrumc_net_codec::decode::{NetDecodeOpts, NetDecode};
-pub use ferrumc_net::utils::ecs_helpers::EntityExt;
-pub use ferrumc_net::{ServerState, connection::{StreamWriter, StreamReader, GameProfile, ConnectionState, Profile}};
-pub use ferrumc_net::NetResult;
+pub use ferrumc_net_codec::{
+    encode::{NetEncodeOpts, NetEncode},
+    decode::{NetDecodeOpts, NetDecode}
+};
+pub use ferrumc_net::{
+    NetResult, ServerState,
+    connection::{
+        StreamWriter, StreamReader, ConnectionState
+    }, 
+    utils::ecs_helpers::EntityExt,
+    packets::outgoing::*
+};
 
 pub use ferrumc_core::identity::player_identity::PlayerIdentity;
+pub use ferrumc_net::connection::{Profile, GameProfile};
 pub use ferrumc_net_codec::*;
 
 pub mod macros {
@@ -27,7 +36,7 @@ pub mod text {
 /// Event API
 pub mod events;
 
-/// INTERNAL do not use unless necessary
+/// INTERNAL
 pub mod internal {
     use super::*;
     use ferrumc_net::packets::outgoing::login_success::LoginSuccessPacket;

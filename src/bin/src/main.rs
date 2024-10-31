@@ -10,14 +10,17 @@ use ferrumc_net::server::create_server_listener;
 use std::sync::Arc;
 use systems::definition;
 use tracing::{error, info, trace};
+use std::time::Duration;
+use rand::seq::IndexedRandom;
+
+#[cfg(feature = "experiments")]
+// Experimental or testing features/events on the server can go into this module.
+mod experiments;
 
 pub(crate) mod errors;
 mod packet_handlers;
 mod systems;
 mod velocity;
-
-#[cfg(feature = "experiments")]
-mod experiments;
 
 pub type Result<T> = std::result::Result<T, errors::BinaryError>;
 
@@ -54,6 +57,31 @@ async fn entry() -> Result<()> {
 
     // Start the systems and wait until all of them are done
     let systems = tokio::spawn(definition::start_all_systems(Arc::clone(&global_state)));
+
+    if get_global_config().lan.enabled {
+        info!("Opening to LAN!");
+
+        let interval = get_global_config().lan.ping_interval;
+
+        if let Ok(socket) = tokio::net::UdpSocket::bind("0.0.0.0:0").await {
+            let socket = Arc::new(socket);
+            ferrumc::get_scheduler().schedule_task(move |_| {
+                let socket = Arc::clone(&socket);
+                async move {
+                    let data = format!("[MOTD]{}[/MOTD][AD]{}[/AD]",
+                        get_global_config().motd.choose(&mut rand::thread_rng()).ok_or(anyhow::anyhow!("failed to get motd"))?,
+                        get_global_config().port);
+                    socket.send_to(&data.as_bytes(), "224.0.2.60:4445").await?;
+                    Ok(())
+                }
+            }, Duration::from_secs_f32(interval),
+                Some(Duration::from_secs_f32(interval)))
+                .await.unwrap();
+        } else {
+            error!("Failed to open to LAN.");
+        }
+    }
+
     systems.await??;
     
     Ok(())

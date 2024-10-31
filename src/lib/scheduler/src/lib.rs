@@ -13,6 +13,7 @@ use std::sync::{Arc, atomic::{AtomicBool, AtomicUsize, Ordering as AtomicOrderin
 use tokio::sync::Notify;
 use tokio::time::{sleep_until, Duration, Instant};
 use tracing::{error, info};
+use dashmap::DashMap;
 
 #[cfg(test)]
 mod tests;
@@ -39,6 +40,7 @@ impl fmt::Display for CancelError {
     }
 }
 
+#[derive(Clone)]
 pub struct ScheduledTask {
     period: Instant,
     interval: Option<Duration>,
@@ -61,12 +63,13 @@ impl ScheduledTask {
         }
     }
 
-    pub async fn run(&self, state: Arc<ServerState>) -> anyhow::Result<()> {
+    async fn run(&self, state: Arc<ServerState>) -> anyhow::Result<()> {
         if self.handle.is_cancelled() {
             Err(CancelError.into())
         } else {
+            (self.runnable)(state).await?;
             self.handle.notify();
-            (self.runnable)(state).await
+            Ok(())
         }
     }
 }
@@ -91,8 +94,35 @@ impl Ord for ScheduledTask {
     }
 }
 
+#[derive(Clone)]
+pub struct TickTask {
+    //delay: usize,
+    runnable: Runnable,
+    handle: TaskHandle,
+}
+
+impl TickTask {
+    async fn run(&self, state: Arc<ServerState>) -> anyhow::Result<()> {
+        if self.handle.is_cancelled() {
+            Err(CancelError.into())
+        } else {
+            (self.runnable)(state).await?;
+            self.handle.notify();
+            Ok(())
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct TaskHandle(Arc<AtomicBool>, Arc<Notify>);
+
+impl PartialEq for TaskHandle {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0) && Arc::ptr_eq(&self.1, &other.1)
+    }
+}
+
+impl Eq for TaskHandle {}
 
 impl TaskHandle {
     /// INTERNAL ONLY
@@ -133,19 +163,92 @@ impl Default for TaskHandle {
 
 pub struct Scheduler {
     task_queue: Arc<Mutex<BinaryHeap<ScheduledTask>>>,
+    pending_ticks: Arc<DashMap<usize, Vec<TickTask>>>,
     wake: Arc<Notify>,
     shutdown: Arc<AtomicBool>,
     active_tasks: Arc<AtomicUsize>,
+    current_tick: Arc<Mutex<usize>>,
 }
 
 impl Scheduler {
     pub fn new() -> Self {
         Self {
             task_queue: Arc::new(Mutex::new(BinaryHeap::new())),
+            pending_ticks: Arc::new(DashMap::new()),
             wake: Arc::new(Notify::new()),
             shutdown: Arc::new(AtomicBool::new(false)),
             active_tasks: Arc::new(AtomicUsize::new(0)),
+            current_tick: Arc::new(Mutex::new(0)),
         }
+    }
+
+    /// INTERNAL
+    ///
+    pub async fn tick(&self, state: Arc<ServerState>) {
+        let current_tick = {
+            let mut tick = self.current_tick.lock().await;
+            let (new, _) = tick.overflowing_add(1);
+            *tick = new;
+            new
+        };
+
+        if let Some(tasks) = self.pending_ticks.remove(&current_tick) {
+            for task in tasks.1 {
+                tokio::spawn({
+                    let state = Arc::clone(&state);
+                    async move {
+                        if let Err(e) = task.run(state).await {
+                            if e.is::<CancelError>() {
+                                return;
+                            }
+                            error!("Error in scheduled task: {}", e);
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    /// Schedules a task for delay next ticks
+    ///
+    /// Delay is in ticks it can not be negative if it's 0 it will be scheduled for next tick.
+    pub async fn schedule_tick<F, Fut>(
+        &self,
+        cb: F,
+        delay: usize
+    ) -> Result<TaskHandle, SchedulerError>
+    where
+        F: FnOnce(Arc<ServerState>) -> Fut + Send + Sync + 'static + Clone,
+        Fut: Future<Output = Result<()>> + Send + Sync,
+    {
+        if self.shutdown.load(AtomicOrdering::Relaxed) {
+            return Err(SchedulerError::Shutdown);
+        }
+
+        let handle = TaskHandle::new();
+
+        let delay = delay.overflowing_add(1).0;
+        let period = {
+            let tick = self.current_tick.lock().await;
+            let (period, _) = tick.overflowing_add(delay);
+            period
+        
+        };
+
+        let task = TickTask {
+            //delay,
+            runnable: Arc::new(move |state| {
+                let cb = cb.clone();
+                Box::pin(async move { cb(state).await })
+            }),
+            handle: handle.clone(),
+        };
+
+        self.pending_ticks.entry(period)
+            .or_insert_with(|| Vec::with_capacity(4))
+            .push(task);
+
+        Ok(handle)
     }
 
     /// Schedules a async task
@@ -183,13 +286,6 @@ impl Scheduler {
         self.wake.notify_one();
         //trace!("Task scheduled");
         Ok(handle)
-    }
-
-    /// Shutdown the scheduler this will wait 10 seconds for all active tasks to finish.
-    ///
-    pub fn shutdown(self: Arc<Self>) {
-        self.shutdown.store(true, AtomicOrdering::Relaxed);
-        self.wake.notify_one();
     }
 
     // this should be safe as I drop the queue mutex guard
@@ -238,7 +334,6 @@ impl Scheduler {
                                 scheduler.wake.notify_one();
                             }
 
-
                             scheduler.active_tasks.fetch_sub(1, AtomicOrdering::Relaxed);
                         }
                     });
@@ -263,10 +358,19 @@ impl Scheduler {
         info!("Scheduler was shutdown");
     }
 
+    /// Shutdown the scheduler this will wait 10 seconds for all active tasks to finish.
+    ///
+    /// Does not wait for ticked tasks as that requires the tick system which may be already shutdown.
+    pub fn shutdown(self: Arc<Self>) {
+        self.shutdown.store(true, AtomicOrdering::Relaxed);
+        self.wake.notify_one();
+    }
+ 
     /// wait for active tasks to complete
     ///
     async fn wait_for_complete(self: Arc<Self>) -> bool {
         let mut elapsed = 0;
+
         while self.active_tasks.load(AtomicOrdering::Relaxed) > 0 && elapsed < 10 {
             tokio::time::sleep(Duration::from_secs(1)).await;
             elapsed += 1;

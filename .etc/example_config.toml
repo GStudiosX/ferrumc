@@ -16,3 +16,7 @@ compression = "fast" # Compression settings (none, fast, best)
 enabled = false
 # The key from forwarding.secret
 secret = ""
+
+[lan]
+enabled = false # If should show in the lan screen
+ping_interval = 1.5 # In seconds

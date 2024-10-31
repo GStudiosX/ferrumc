@@ -29,6 +29,8 @@ impl System for TickingSystem {
             // TODO handle error
             let res = TickEvent::trigger(TickEvent::new(tick), state.clone()).await;
 
+            ferrumc::get_scheduler().tick(state.clone()).await; // tick the scheduler
+
             if res.is_err() {
                 debug!("error: {:?}", res);
             }
