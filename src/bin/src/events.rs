@@ -11,6 +11,7 @@ pub use ferrumc_events::{
 
 pub use ferrumc_net::packets::incoming::server_bound_plugin_message::LoginPluginResponseEvent;
 pub use ferrumc_net::packets::incoming::chat_message::PlayerAsyncChatEvent;
+pub use ferrumc_net::connection::PlayerDisconnectEvent;
 
 use std::sync::{Arc, RwLock};
 
@@ -111,17 +112,4 @@ pub struct PlayerStartLoginEvent {
 pub struct PlayerJoinGameEvent {
     /// The entity that this event was fired for.
     pub entity: Entity,
-}
-
-/// This is called when the player gets disconnected either by the server, player leaving or invalid packets and other errors.
-///
-#[derive(Event)]
-pub struct PlayerDisconnectEvent {
-    entity: Entity,
-}
-
-impl PlayerDisconnectEvent {
-    pub fn entity(&self) -> Entity {
-        self.entity
-    }
 }
