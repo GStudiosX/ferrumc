@@ -3,12 +3,11 @@ use async_trait::async_trait;
 use ferrumc_core::identity::player_identity::PlayerIdentity;
 use ferrumc_net::connection::{ConnectionState, StreamWriter};
 use ferrumc_net::packets::outgoing::keep_alive::{KeepAlive, KeepAlivePacket};
+use ferrumc_net::utils::broadcast::{BroadcastOptions, BroadcastToAll};
 use ferrumc_net::GlobalState;
-use ferrumc_net_codec::encode::{NetEncode, NetEncodeOpts};
-use futures::StreamExt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use tracing::{debug, error, info};
+use tracing::{error, info, trace, warn};
 
 pub struct KeepAliveSystem {
     shutdown: AtomicBool,
@@ -25,6 +24,7 @@ impl KeepAliveSystem {
 #[async_trait]
 impl System for KeepAliveSystem {
     async fn start(self: Arc<Self>, state: GlobalState) {
+        info!("Started keep_alive");
         let mut last_time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .expect("Time went backwards")
@@ -48,7 +48,7 @@ impl System for KeepAliveSystem {
 
             let fifteen_seconds_ms = 15000; // 15 seconds in milliseconds
 
-            let query = state
+            let entities = state
                 .universe
                 .query::<(&mut StreamWriter, &ConnectionState, &KeepAlive)>()
                 .into_entities()
@@ -66,41 +66,28 @@ impl System for KeepAliveSystem {
                     }
                 })
                 .collect::<Vec<_>>();
-            if !query.is_empty() {
-                info!("there are {:?} players to keep alive", query.len());
+            if !entities.is_empty() {
+                trace!("there are {:?} players to keep alive", entities.len());
             }
 
             let packet = KeepAlivePacket::default();
-            let packet = {
-                let mut buffer = Vec::new();
-                if packet
-                    .encode(&mut buffer, &NetEncodeOpts::WithLength)
-                    .is_err()
-                {
-                    error!("Error encoding keep alive packet");
-                }
-                buffer
-            };
-            let thread = tokio::spawn(futures::stream::iter(query).fold(
-                (state.clone(), packet),
-                move |(state, packet), entity| async move {
-                    if let Ok(mut writer) = state.universe.get_mut::<StreamWriter>(entity) {
-                        if let Err(e) = writer
-                            .send_packet(&packet.as_slice(), &NetEncodeOpts::None)
-                            .await
-                        {
-                            error!("Error sending keep alive packet: {}", e);
-                        }
-                    }
-                    debug!("Sent keep alive packet to {}", entity);
-                    let mut keep_alive = state.universe.get_mut::<KeepAlive>(entity).unwrap();
+
+            let broadcast_opts = BroadcastOptions::default()
+                .only(entities)
+                .with_sync_callback(move |entity, state| {
+                    let Ok(mut keep_alive) = state.universe.get_mut::<KeepAlive>(entity) else {
+                        warn!("Failed to get <KeepAlive> component for entity {}", entity);
+                        return;
+                    };
+
                     *keep_alive = KeepAlive::from(current_time);
-                    (state, packet)
-                },
-            ));
-            if thread.await.is_err() {
-                error!("Error sending keep alive packet");
-            }
+                });
+
+            if let Err(e) = state.broadcast(&packet, broadcast_opts).await {
+                error!("Error sending keep alive packet: {}", e);
+            };
+            // TODO, this should be configurable as some people may have bad network so the clients may end up disconnecting from the server moments before the keep alive is sent
+            tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
         }
     }
 
